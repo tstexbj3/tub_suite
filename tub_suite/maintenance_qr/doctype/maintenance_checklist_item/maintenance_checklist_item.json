@@ -11,6 +11,10 @@
   "is_completed",
   "completed_by",
   "completed_on",
+  "section_break_photos",
+  "photo_before",
+  "column_break_photos",
+  "photo_after",
   "section_break_7",
   "remarks"
  ],
@@ -54,20 +58,39 @@
    "read_only": 1
   },
   {
+   "collapsible": 1,
+   "fieldname": "section_break_photos",
+   "fieldtype": "Section Break",
+   "label": "Photos"
+  },
+  {
+   "fieldname": "photo_before",
+   "fieldtype": "Attach Image",
+   "label": "Photo Before"
+  },
+  {
+   "fieldname": "column_break_photos",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "photo_after",
+   "fieldtype": "Attach Image",
+   "label": "Photo After"
+  },
+  {
    "fieldname": "section_break_7",
    "fieldtype": "Section Break"
   },
   {
    "fieldname": "remarks",
    "fieldtype": "Text",
-   "in_list_view": 1,
    "label": "Remarks"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-11-30 15:45:00.000000",
+ "modified": "2024-11-30 17:00:00.000000",
  "modified_by": "Administrator",
  "module": "Maintenance QR",
  "name": "Maintenance Checklist Item",

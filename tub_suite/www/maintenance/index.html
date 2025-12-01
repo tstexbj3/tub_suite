@@ -1,0 +1,13 @@
+{% extends "templates/web.html" %}
+{% block title %}Inspector Portal{% endblock %}
+{% block page_content %}
+<h1>Maintenance Inspector Portal</h1>
+<div><h3>Scan QR Code</h3><video id="qr-video" width="300"></video><button onclick="startScanner()">Start Scanner</button></div>
+<div><h3>Enter Asset Code</h3><input type="text" id="asset-code" /><button onclick="lookupAsset()">Lookup</button></div>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+function startScanner(){const v=document.getElementById("qr-video");navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(s=>{v.srcObject=s;v.play();scan();});}
+function scan(){const v=document.getElementById("qr-video"),c=document.createElement("canvas"),x=c.getContext("2d");if(v.readyState===v.HAVE_ENOUGH_DATA){c.height=v.videoHeight;c.width=v.videoWidth;x.drawImage(v,0,0,c.width,c.height);const d=x.getImageData(0,0,c.width,c.height),code=jsQR(d.data,d.width,d.height);if(code){window.location.href="/maintenance/asset/"+code.data;return;}}requestAnimationFrame(scan);}
+function lookupAsset(){const c=document.getElementById("asset-code").value;if(c)window.location.href="/maintenance/asset/"+c;}
+</script>
+{% endblock %}
