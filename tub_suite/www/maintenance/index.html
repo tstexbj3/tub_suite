@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance Inspector Portal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(to bottom, #f5f7fa 0%, #e8ecf1 100%);
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Sarabun", sans-serif;
+            min-height: 100vh;
+        }
+        .inspector-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .inspector-header h1 {
+            margin: 0 0 5px 0;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .inspector-header p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .company-logo {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            opacity: 0.95;
+        }
+        .main-container {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            padding-bottom: 60px;
+        }
+
+        .option-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+        .option-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+        .option-card:active {
+            transform: translateY(0);
+        }
+        .option-card h3 {
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        .option-card p {
+            margin: 8px 0 0 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .option-icon {
+            font-size: 32px;
+            margin-right: 14px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .input-group { margin-top: 15px; display: none; }
+        .input-group.active { display: block; }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-secondary {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-success {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .video-container { display: none; margin-top: 15px; }
+        .video-container.active { display: block; }
+        .video-container video {
+            width: 100%;
+            max-width: 500px;
+            border-radius: 12px;
+            border: 3px solid #667eea;
+        }
+
+        .asset-result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+        }
+        .asset-result-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .asset-result-card h4 {
+            margin: 0 0 8px 0;
+            color: #2c3e50;
+        }
+        .asset-result-card .asset-info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+
+        .asset-photo {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 12px;
+            margin: 15px auto;
+            display: block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .asset-detail-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .asset-detail-card h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .asset-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .asset-info-item {
+            padding: 8px 0;
+        }
+        .asset-info-item strong {
+            display: block;
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 3px;
+        }
+
+        /* IMPROVEMENT #3: Asset unavailable banner */
+        .unavailable-banner {
+            background: #fff3e0;
+            border: 3px solid #ff9800;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .unavailable-banner h3 {
+            color: #e65100;
+            margin: 0 0 10px 0;
+        }
+        .unavailable-banner .repair-info {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .unavailable-banner button {
+            margin-top: 10px;
+        }
+
+        .checklist-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e6ed;
+            display: flex;
+            align-items: flex-start;
+        }
+        .checklist-item input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        .checklist-item input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        .checklist-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .checklist-item.mandatory {
+            border-color: #e74c3c;
+            background: #fff5f5;
+        }
+        .checklist-item.overdue {
+            border-color: #e74c3c;
+            border-width: 3px;
+            background: #ffebee;
+        }
+        .checklist-item.due-soon {
+            border-color: #ff9800;
+            border-width: 2px;
+            background: #fff3e0;
+        }
+        /* IMPROVEMENT #1: Completed today style */
+        .checklist-item.completed-today {
+            border-color: #2196F3;
+            border-width: 2px;
+            background: #e3f2fd;
+        }
+        .checklist-item.not-due-yet {
+            border-color: #9e9e9e;
+            background: #f5f5f5;
+        }
+
+        .due-date-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        .due-date-badge.overdue {
+            background: #e74c3c;
+            color: white;
+        }
+        .due-date-badge.due-soon {
+            background: #ff9800;
+            color: white;
+        }
+        .due-date-badge.upcoming {
+            background: #4caf50;
+            color: white;
+        }
+        /* IMPROVEMENT #1: Badge styles */
+        .due-date-badge.completed-today {
+            background: #2196F3;
+            color: white;
+        }
+        .due-date-badge.not-due-yet {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .issue-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        .issue-section h3 {
+            margin-top: 0;
+            color: #e74c3c;
+        }
+        .issue-section textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: inherit;
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .back-btn {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 16px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        /* IMPROVEMENT #2: Success toast */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #27ae60;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+        }
+        .toast.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from { top: 60px; opacity: 0; }
+            to { top: 80px; opacity: 1; }
+        }
+
+        /* IMPROVEMENT #4: History view styles */
+        .history-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .history-section h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .timeline {
+            margin-top: 20px;
+        }
+        .timeline-item {
+            border-left: 3px solid #667eea;
+            padding-left: 20px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .timeline-item::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: -15px;
+            background: white;
+            font-size: 24px;
+        }
+        .timeline-item .date {
+            font-size: 13px;
+            color: #666;
+            margin: 5px 0;
+        }
+        .timeline-item .details {
+            font-size: 14px;
+            color: #444;
+            margin: 5px 0;
+        }
+        .timeline-item strong {
+            color: #2c3e50;
+        }
+        .timeline-item .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .timeline-item .status.pending {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        .timeline-item .status.completed {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        /* Confirmation modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-buttons button {
+            flex: 1;
+        }
+
+        @media (max-width: 600px) {
+            .asset-info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="inspector-header">
+        <div class="company-logo">Tipubon International Co., Ltd.</div>
+        <h1>🔧 ระบบตรวจสอบการบำรุงรักษา</h1>
+        <p id="inspector-name">Mobile Maintenance Inspector Portal</p>
+    </div>
+
+    <!-- IMPROVEMENT #2: Success Toast -->
+    <div id="successToast" class="toast"></div>
+
+    <!-- IMPROVEMENT #2: Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>⚠️ ยืนยันการส่งข้อมูล</h3>
+            <p id="confirmMessage"></p>
+            <div class="modal-buttons">
+                <button class="btn-secondary" onclick="closeConfirmModal()">ยกเลิก</button>
+                <button class="btn-primary" onclick="confirmSubmit()">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Search Section -->
+        <div id="searchSection" class="section active">
+            <div class="option-card" onclick="toggleQRScanner()">
+                <h3><span class="option-icon">📷</span> สแกน QR Code</h3>
+                <p>สแกนรหัส QR บนสินทรัพย์ด้วยกล้อง</p>
+                <div class="video-container" id="videoContainer">
+                    <video id="qrVideo" playsinline></video>
+                </div>
+            </div>
+
+            <div class="option-card">
+                <div onclick="toggleManualEntry()" style="cursor:pointer;">
+                    <h3><span class="option-icon">⌨️</span> ค้นหารหัสสินทรัพย์</h3>
+                    <p>ป้อนรหัสสินทรัพย์หรือชื่อด้วยตนเอง</p>
+                </div>
+                <div class="input-group" id="manualEntryGroup">
+                    <input type="text" id="assetCodeInput" placeholder="ป้อนรหัสสินทรัพย์" />
+                    <button class="btn-primary" onclick="searchAssets()">ค้นหา</button>
+                </div>
+            </div>
+
+            <div id="searchResults"></div>
+        </div>
+
+        <!-- Asset Detail Section -->
+        <div id="assetDetailSection" class="section">
+            <a href="#" class="back-btn" onclick="showSearch(); return false;">← กลับไปค้นหา</a>
+
+            <!-- IMPROVEMENT #3: Unavailable banner -->
+            <div id="unavailableBanner" style="display:none;" class="unavailable-banner">
+                <h3>⚠️ สินทรัพย์ไม่พร้อมใช้งาน</h3>
+                <p>สถานะ: <strong id="unavailableStatus"></strong></p>
+                <div id="repairInfo" class="repair-info" style="display:none;">
+                    <p><strong>งานซ่อมที่กำลังดำเนินการ:</strong></p>
+                    <p>รหัสงาน: <span id="repairName"></span></p>
+                    <p>สถานะ: <span id="repairStatus"></span></p>
+                    <p>รายละเอียด: <span id="repairDesc"></span></p>
+                    <button class="btn-secondary" onclick="viewRepair()">ดูรายละเอียดการซ่อม</button>
+                </div>
+                <p style="margin-top:10px;"><em>ไม่สามารถทำการบำรุงรักษาได้ในขณะนี้</em></p>
+            </div>
+
+            <div class="asset-detail-card">
+                <img id="assetPhoto" class="asset-photo" style="display:none;" />
+                <h2 id="assetName"></h2>
+                <div class="asset-info-grid">
+                    <div class="asset-info-item">
+                        <strong>รหัสสินทรัพย์</strong>
+                        <span id="assetId"></span>
+                    </div>
+                    <div class="asset-info-item">
+                        <strong>Item Code</strong>
+                        <span id="assetItemCode"></span>
+                    </div>
+                    <div class="asset-info-item">
+                        <strong>หมวดหมู่</strong>
+                        <span id="assetCategory"></span>
+                    </div>
+                    <div class="asset-info-item">
+                        <strong>ที่ตั้ง</strong>
+                        <span id="assetLocation"></span>
+                    </div>
+                    <div class="asset-info-item">
+                        <strong>สถานะ</strong>
+                        <span id="assetStatus"></span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="checklistBtn" onclick="showChecklist()">รายการตรวจเช็ค</button>
+            <button class="btn-success" onclick="showHistory()">📜 ประวัติการบำรุงรักษา</button>
+            <button class="btn-secondary" onclick="viewFullDetails()">รายละเอียดเต็ม</button>
+        </div>
+
+        <!-- Checklist Section -->
+        <div id="checklistSection" class="section">
+            <a href="#" class="back-btn" onclick="showAssetDetail(); return false;">← กลับไปดูรายละเอียด</a>
+
+            <div class="asset-detail-card">
+                <h2>รายการตรวจเช็คการบำรุงรักษา</h2>
+                <p><strong id="checklistAssetName"></strong></p>
+            </div>
+
+            <div id="checklistItems"></div>
+
+            <div class="issue-section">
+                <h3>🔧 แจ้งปัญหา (ถ้ามี)</h3>
+                <textarea id="issueDescription" placeholder="อธิบายปัญหาที่พบ..."></textarea>
+
+                <div style="margin-top:15px;">
+                    <label style="display:block;margin-bottom:8px;font-weight:bold;">📷 แนบรูปภาพปัญหา (สูงสุด 5 รูป)</label>
+                    <input type="file" id="issuePhoto" accept="image/*" capture="environment" multiple
+                           style="display:block;width:100%;padding:10px;border:2px dashed #e0e6ed;border-radius:8px;cursor:pointer;" />
+                    <div id="photoPreviewContainer" style="margin-top:10px;display:none;">
+                        <div id="photoPreviewList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;"></div>
+                        <p id="photoSizeInfo" style="font-size:12px;color:#666;margin-top:10px;"></p>
+                        <button type="button" onclick="removeAllPhotos()" style="display:block;margin-top:10px;background:#e74c3c;color:white;border:none;padding:8px 15px;border-radius:5px;cursor:pointer;">ลบรูปภาพทั้งหมด</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-primary" onclick="showConfirmModal()">ส่งรายการตรวจเช็ค</button>
+        </div>
+
+        <!-- IMPROVEMENT #4: History Section -->
+        <div id="historySection" class="section">
+            <a href="#" class="back-btn" onclick="showAssetDetail(); return false;">← กลับไปดูรายละเอียด</a>
+
+            <div class="history-section">
+                <h3>📜 ประวัติการบำรุงรักษา</h3>
+                <p><strong id="historyAssetName"></strong></p>
+                <div id="historyTimeline" class="timeline">
+                    <div class="loading">กำลังโหลด...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/frappe/js/lib/jquery/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        let videoStream = null;
+        let scanning = false;
+        let currentAsset = null;
+        let checklistData = [];
+        let issuePhotoFiles = []; // Changed to array for multiple photos
+        let currentRepair = null;
+
+        // QR Scanner Functions
+        function toggleQRScanner() {
+            const container = $("#videoContainer");
+            if (container.hasClass("active")) {
+                stopScanner();
+                container.removeClass("active");
+            } else {
+                container.addClass("active");
+                startScanner();
+            }
+        }
+
+        function toggleManualEntry() {
+            const group = $("#manualEntryGroup");
+            group.toggleClass("active");
+            if (group.hasClass("active")) $("#assetCodeInput").focus();
+        }
+
+        function startScanner() {
+            const video = document.getElementById("qrVideo");
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    videoStream = stream;
+                    scanning = true;
+                    scanQRCode();
+                }).catch(function(err) {
+                    alert("ไม่สามารถเข้าถึงกล้องได้");
+                });
+        }
+
+        function stopScanner() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            scanning = false;
+        }
+
+        function scanQRCode() {
+            if (!scanning) return;
+            const video = document.getElementById("qrVideo");
+            const canvas = document.createElement("canvas");
+            const context = canvas.getContext("2d");
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    stopScanner();
+                    // Extract asset ID from various URL formats
+                    let assetId = code.data;
+
+                    // Check for /app/asset/ASSET-ID format
+                    if (code.data.includes("/app/asset/")) {
+                        assetId = code.data.split("/app/asset/")[1].split("?")[0].split("#")[0];
+                    }
+                    // Check for /maintenance/asset/ASSET-ID format
+                    else if (code.data.includes("/maintenance/asset/")) {
+                        assetId = code.data.split("/maintenance/asset/")[1].split("?")[0].split("#")[0];
+                    }
+                    // Check for /scan/ASSET-ID format
+                    else if (code.data.includes("/scan/")) {
+                        assetId = code.data.split("/scan/")[1].split("?")[0].split("#")[0];
+                    }
+                    // Check for maintenance?asset= format
+                    else if (code.data.includes("maintenance?asset=")) {
+                        assetId = code.data.split("asset=")[1].split("&")[0];
+                    }
+                    // Otherwise assume it's a plain asset code
+
+                    console.log("QR Code scanned:", code.data);
+                    console.log("Extracted asset ID:", assetId);
+
+                    // If it looks like an asset code (starts with ACC-), load directly
+                    if (assetId.startsWith("ACC-")) {
+                        loadAssetDetail(assetId);
+                    } else {
+                        searchAssets(assetId);
+                    }
+                    return;
+                }
+            }
+            setTimeout(scanQRCode, 100);
+        }
+
+        // Search Functions
+        function searchAssets(codeOverride) {
+            const assetCode = codeOverride || $("#assetCodeInput").val().trim();
+            if (!assetCode) {
+                alert("กรุณาป้อนรหัสสินทรัพย์");
+                return;
+            }
+
+            console.log("=== SEARCH DEBUG ===");
+            console.log("Search term:", assetCode);
+            console.log("Timestamp:", new Date().toISOString());
+
+            $("#searchResults").html('<div class="loading">กำลังค้นหา...</div>');
+
+            const url = "/api/method/tub_suite.api.asset.search_assets?asset_code=" + encodeURIComponent(assetCode);
+            console.log("URL:", url);
+
+            fetch(url)
+                .then(response => {
+                    console.log("Response status:", response.status);
+                    console.log("Response ok:", response.ok);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Response data:", data);
+                    if (data.message && data.message.success) {
+                        console.log("✓ Search successful, assets found:", data.message.count);
+                        displaySearchResults(data.message.assets);
+                    } else {
+                        console.log("✗ Search returned no success");
+                        console.log("Message:", data.message);
+                        console.log("Exception:", data.exception);
+                        $("#searchResults").html('<div class="loading">ไม่พบสินทรัพย์<br><small>' + (data.exception || JSON.stringify(data.message) || '') + '</small></div>');
+                    }
+                })
+                .catch(err => {
+                    console.error("✗ Search error:", err);
+                    $("#searchResults").html('<div class="loading">เกิดข้อผิดพลาด: ' + err.message + '</div>');
+                });
+        }
+
+        function displaySearchResults(assets) {
+            if (!assets || assets.length === 0) {
+                $("#searchResults").html('<div class="loading">ไม่พบสินทรัพย์</div>');
+                return;
+            }
+
+            let html = '<h3 style="margin-top:20px;">ผลการค้นหา (' + assets.length + ' รายการ)</h3>';
+            assets.forEach(function(asset) {
+                html += '<div class="asset-result-card" onclick="loadAssetDetail(\'' + asset.name + '\')">';
+                html += '<h4>' + asset.asset_name + '</h4>';
+                html += '<div class="asset-info">';
+                html += 'รหัส: ' + asset.name + ' | Item: ' + (asset.item_code || 'N/A') + '<br>';
+                html += 'หมวดหมู่: ' + (asset.asset_category || 'N/A') + ' | สถานะ: ' + (asset.status || 'N/A');
+                html += '</div>';
+                html += '</div>';
+            });
+
+            $("#searchResults").html(html);
+        }
+
+        // Asset Detail Functions
+        function loadAssetDetail(assetName, clearSearchResults = true) {
+            // Only clear search results if loading from search (not from refresh)
+            if (clearSearchResults) {
+                $("#searchResults").html('<div class="loading">กำลังโหลด...</div>');
+            }
+
+            fetch("/api/method/tub_suite.api.asset.get_asset_with_checklist?asset_name=" + encodeURIComponent(assetName))
+                .then(response => response.json())
+                .then(data => {
+                    console.log("API Response:", data);
+                    if (data.message && data.message.success) {
+                        currentAsset = data.message.asset;
+                        checklistData = data.message.checklist || [];
+                        currentRepair = data.message.active_repair || null;
+
+                        // IMPROVEMENT #3: Handle unavailable assets
+                        if (data.message.unavailable) {
+                            displayUnavailableAsset(data.message);
+                        } else {
+                            $("#unavailableBanner").hide();
+                            $("#checklistBtn").show();
+                        }
+
+                        displayAssetDetail();
+                    } else {
+                        console.error("API Error:", data);
+                        alert("ไม่สามารถโหลดข้อมูลสินทรัพย์ได้\nError: " + (data.message ? JSON.stringify(data.message) : data.exception || "Unknown"));
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("เกิดข้อผิดพลาด: " + err.message);
+                });
+        }
+
+        // IMPROVEMENT #3: Display unavailable asset
+        function displayUnavailableAsset(data) {
+            $("#unavailableStatus").text(data.unavailable_reason);
+            $("#unavailableBanner").show();
+            $("#checklistBtn").hide();
+
+            if (data.active_repair) {
+                $("#repairName").text(data.active_repair.name);
+                $("#repairStatus").text(data.active_repair.repair_status);
+                $("#repairDesc").text(data.active_repair.description || 'ไม่มีรายละเอียด');
+                $("#repairInfo").show();
+            } else {
+                $("#repairInfo").hide();
+            }
+        }
+
+        function viewRepair() {
+            if (currentRepair) {
+                window.open("/app/asset-repair/" + currentRepair.name, "_blank");
+            }
+        }
+
+        function displayAssetDetail() {
+            if (!currentAsset) return;
+
+            console.log("Displaying asset:", currentAsset);
+            console.log("Photo URL:", currentAsset.photo);
+
+            $("#assetName").text(currentAsset.asset_name);
+            $("#assetId").text(currentAsset.name);
+            $("#assetItemCode").text(currentAsset.item_code || 'N/A');
+            $("#assetCategory").text(currentAsset.asset_category || 'N/A');
+            $("#assetLocation").text(currentAsset.location || 'N/A');
+            $("#assetStatus").text(currentAsset.status || 'N/A');
+
+            if (currentAsset.photo) {
+                console.log("Setting photo src to:", currentAsset.photo);
+                $("#assetPhoto").attr("src", currentAsset.photo).show();
+            } else {
+                console.log("No photo available");
+                $("#assetPhoto").attr("src", "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23f0f0f0' width='400' height='300'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-size='20'%3ENo Image%3C/text%3E%3C/svg%3E").show();
+            }
+
+            showSection("assetDetailSection");
+        }
+
+        function showChecklist() {
+            if (!currentAsset) return;
+
+            $("#checklistAssetName").text(currentAsset.asset_name);
+
+            let html = '';
+            if (checklistData.length === 0) {
+                html = '<div class="loading">ไม่มีรายการตรวจเช็ค</div>';
+            } else {
+                checklistData.forEach(function(item, index) {
+                    // IMPROVEMENT #1: Determine item class and disable status
+                    let itemClass = '';
+                    let badgeClass = '';
+                    let badgeText = '';
+                    let isDisabled = !item.is_checkable;
+
+                    if (item.status_badge) {
+                        badgeText = item.status_badge.text;
+                        badgeClass = item.status_badge.type.replace(/_/g, '-');
+
+                        // Set item class based on status
+                        if (item.status_badge.type === 'completed_today') {
+                            itemClass = ' completed-today';
+                        } else if (item.status_badge.type === 'overdue') {
+                            itemClass = ' overdue';
+                        } else if (item.status_badge.type === 'due_soon' || item.status_badge.type === 'due_today') {
+                            itemClass = ' due-soon';
+                        } else if (item.status_badge.type === 'not_due_yet') {
+                            itemClass = ' not-due-yet';
+                        }
+                    }
+
+                    html += '<div class="checklist-item' + itemClass + '">';
+                    html += '<input type="checkbox" id="check_' + index + '" ' +
+                            (item.is_completed ? 'checked' : '') +
+                            (isDisabled ? ' disabled' : '') + ' />';
+                    html += '<label for="check_' + index + '">';
+                    html += '<strong>' + item.item_description + '</strong>';
+                    if (item.is_mandatory) html += ' <span style="color:#e74c3c;">*</span>';
+                    if (badgeText) html += '<span class="due-date-badge ' + badgeClass + '">' + badgeText + '</span>';
+
+                    // IMPROVEMENT #1: Show completed by info
+                    if (item.completed_by) {
+                        html += '<div style="font-size:11px;color:#2196F3;margin-top:4px;">';
+                        html += '✓ เสร็จโดย: ' + item.completed_by;
+                        if (item.completed_time) {
+                            const time = new Date(item.completed_time);
+                            html += ' เมื่อ ' + time.toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'});
+                        }
+                        html += ' <a href="#" onclick="viewTaskDetails(' + index + '); return false;" style="margin-left:8px;">ดูรายละเอียด</a>';
+                        html += '</div>';
+                    }
+
+                    // Add periodicity and type info
+                    html += '<div style="font-size:12px;color:#666;margin-top:4px;">';
+                    if (item.periodicity) html += '📅 ' + item.periodicity;
+                    if (item.maintenance_type) html += ' | 🔧 ' + item.maintenance_type;
+                    if (item.next_due_date) {
+                        const dueDate = new Date(item.next_due_date);
+                        const formattedDate = dueDate.toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        html += ' | 📆 ครั้งถัดไป: ' + formattedDate;
+                    }
+                    if (item.last_completion_date && !item.completed_by) {
+                        const lastDate = new Date(item.last_completion_date);
+                        const formattedDate = lastDate.toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        html += ' | ✅ ครั้งล่าสุด: ' + formattedDate;
+                    }
+                    html += '</div>';
+
+                    html += '</label>';
+                    html += '</div>';
+                });
+            }
+
+            $("#checklistItems").html(html);
+            showSection("checklistSection");
+        }
+
+        // IMPROVEMENT #1: View task details
+        function viewTaskDetails(index) {
+            const item = checklistData[index];
+            let details = "รายละเอียดงาน:\n\n";
+            details += "งาน: " + item.item_description + "\n";
+            if (item.completed_by) {
+                details += "ทำเสร็จโดย: " + item.completed_by + "\n";
+            }
+            if (item.completed_time) {
+                details += "เวลา: " + new Date(item.completed_time).toLocaleString('th-TH') + "\n";
+            }
+            if (item.last_completion_date) {
+                details += "วันที่เสร็จ: " + item.last_completion_date + "\n";
+            }
+            if (item.next_due_date) {
+                details += "ครั้งถัดไป: " + item.next_due_date;
+            }
+            alert(details);
+        }
+
+        // IMPROVEMENT #2: Confirmation modal
+        function showConfirmModal() {
+            if (!currentAsset) {
+                alert("ไม่พบข้อมูลสินทรัพย์");
+                return;
+            }
+
+            // Count checked items
+            const checkedCount = checklistData.filter((item, index) =>
+                $("#check_" + index).is(":checked")
+            ).length;
+
+            const issueDesc = $("#issueDescription").val().trim();
+            const hasIssue = issueDesc.length > 0;
+            const hasPhoto = issuePhotoFile !== null;
+
+            let message = "คุณต้องการส่งข้อมูลนี้หรือไม่?\n\n";
+            message += "✓ งานที่เช็ค: " + checkedCount + " รายการ\n";
+            if (hasIssue) {
+                message += "✓ มีการแจ้งปัญหา\n";
+            }
+            if (hasPhoto) {
+                message += "✓ มีรูปภาพแนบ\n";
+            }
+
+            $("#confirmMessage").text(message);
+            $("#confirmModal").addClass("show");
+        }
+
+        function closeConfirmModal() {
+            $("#confirmModal").removeClass("show");
+        }
+
+        function confirmSubmit() {
+            closeConfirmModal();
+            submitChecklist();
+        }
+
+        function submitChecklist() {
+            if (!currentAsset) {
+                alert("ไม่พบข้อมูลสินทรัพย์");
+                return;
+            }
+
+            // Collect checklist status
+            const completedItems = [];
+            checklistData.forEach(function(item, index) {
+                const checked = $("#check_" + index).is(":checked");
+                completedItems.push({
+                    name: item.name,
+                    item_description: item.item_description,
+                    is_mandatory: item.is_mandatory,
+                    is_completed: checked ? 1 : 0
+                });
+            });
+
+            const issueDesc = $("#issueDescription").val().trim();
+
+            console.log("Submitting checklist for:", currentAsset.name);
+            console.log("Completed items:", completedItems);
+            console.log("Issue:", issueDesc);
+
+            // Use POST method with form data
+            const formData = new FormData();
+            formData.append("asset_name", currentAsset.name);
+            formData.append("checklist_data", JSON.stringify(completedItems));
+            if (issueDesc) {
+                formData.append("issue_description", issueDesc);
+            }
+
+            fetch("/api/method/tub_suite.api.asset.submit_checklist", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log("Submit result:", result);
+                if (result.message && result.message.success) {
+                    const repairName = result.message.repair_name;
+                    const completedCount = result.message.total_completed || 0;
+
+                    // IMPROVEMENT #5: Upload multiple photos with compression
+                    if (issuePhotoFiles.length > 0 && repairName) {
+                        return uploadAllPhotos(repairName)
+                            .then((results) => {
+                                const successCount = results.filter(r => r.success).length;
+                                const failCount = results.length - successCount;
+
+                                // IMPROVEMENT #2: Show toast and stay on page
+                                if (failCount === 0) {
+                                    showSuccessToast(`✅ บันทึกเรียบร้อย! ${successCount} รูป | งานซ่อม: ${repairName}`);
+                                } else {
+                                    showSuccessToast(`⚠️ บันทึกเรียบร้อย ${successCount}/${results.length} รูป | งานซ่อม: ${repairName}`);
+                                }
+
+                                // Reload asset details to show updated status (don't clear search)
+                                loadAssetDetail(currentAsset.name, false);
+
+                                // Clear form
+                                $("#issueDescription").val("");
+                                removeAllPhotos();
+
+                                // Scroll to top
+                                window.scrollTo(0, 0);
+                            })
+                            .catch(err => {
+                                showSuccessToast("⚠️ บันทึกเรียบร้อย แต่รูปภาพอัพโหลดไม่สำเร็จ");
+                                loadAssetDetail(currentAsset.name, false);
+                                $("#issueDescription").val("");
+                                removeAllPhotos();
+                            });
+                    } else {
+                        // IMPROVEMENT #2: Show toast and stay on page
+                        let message = "✅ บันทึก " + completedCount + " รายการเรียบร้อย";
+                        if (repairName) {
+                            message += " | งานซ่อม: " + repairName;
+                        }
+                        showSuccessToast(message);
+
+                        // Reload asset details (don't clear search)
+                        loadAssetDetail(currentAsset.name, false);
+
+                        // Clear form
+                        $("#issueDescription").val("");
+                        removePhoto();
+                    }
+                } else {
+                    console.error("Submit error:", result);
+                    alert("เกิดข้อผิดพลาด: " + (result.message ? (result.message.message || JSON.stringify(result.message)) : result.exception || "Unknown"));
+                }
+            })
+            .catch(err => {
+                console.error("Fetch error:", err);
+                alert("เกิดข้อผิดพลาด: " + err.message);
+            });
+        }
+
+        // IMPROVEMENT #2: Show success toast
+        function showSuccessToast(message) {
+            const toast = $("#successToast");
+            toast.text(message);
+            toast.addClass("show");
+            setTimeout(() => {
+                toast.removeClass("show");
+            }, 4000);
+        }
+
+        function viewFullDetails() {
+            if (currentAsset) {
+                window.open("/app/asset/" + currentAsset.name, "_blank");
+            }
+        }
+
+        // IMPROVEMENT #5: Multiple photo upload
+        $("#issuePhoto").on("change", function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            // Limit to 5 photos
+            if (files.length > 5) {
+                alert("สามารถแนบได้สูงสุด 5 รูปเท่านั้น");
+                files.length = 5;
+            }
+
+            issuePhotoFiles = files;
+            displayPhotoPreview(files);
+        });
+
+        function displayPhotoPreview(files) {
+            const previewList = $("#photoPreviewList");
+            previewList.empty();
+
+            let totalSize = 0;
+
+            files.forEach((file, index) => {
+                totalSize += file.size;
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const photoItem = $(`
+                        <div style="position:relative;">
+                            <img src="${event.target.result}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;border:2px solid #e0e6ed;" />
+                            <button type="button" onclick="removeSinglePhoto(${index})"
+                                style="position:absolute;top:5px;right:5px;background:#e74c3c;color:white;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;font-size:16px;line-height:1;">
+                                ×
+                            </button>
+                            <p style="font-size:11px;color:#666;margin-top:3px;">${(file.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                    `);
+                    previewList.append(photoItem);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            $("#photoSizeInfo").text(`รูปภาพทั้งหมด: ${files.length} รูป | ขนาดรวม: ${(totalSize / 1024).toFixed(2)} KB`);
+            $("#photoPreviewContainer").show();
+        }
+
+        function removeSinglePhoto(index) {
+            issuePhotoFiles.splice(index, 1);
+            if (issuePhotoFiles.length > 0) {
+                displayPhotoPreview(issuePhotoFiles);
+            } else {
+                removeAllPhotos();
+            }
+        }
+
+        function removeAllPhotos() {
+            issuePhotoFiles = [];
+            $("#issuePhoto").val("");
+            $("#photoPreviewContainer").hide();
+            $("#photoPreviewList").empty();
+            $("#photoSizeInfo").text("");
+        }
+
+        // IMPROVEMENT #5: Upload multiple photos
+        function uploadAllPhotos(repairName) {
+            console.log(`=== UPLOADING ${issuePhotoFiles.length} PHOTOS ===`);
+            const uploadPromises = issuePhotoFiles.map((file, index) => {
+                return compressAndUploadSinglePhoto(file, repairName, index + 1);
+            });
+
+            return Promise.all(uploadPromises);
+        }
+
+        // IMPROVEMENT #5: Compress and upload single photo
+        function compressAndUploadSinglePhoto(file, repairName, photoNumber) {
+            return new Promise((resolve, reject) => {
+                console.log(`=== PHOTO ${photoNumber} COMPRESSION START ===`);
+                console.log("Original file:", file.name, "Size:", (file.size / 1024).toFixed(2), "KB");
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 1200;
+                        const MAX_HEIGHT = 1200;
+
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calculate new dimensions
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+
+                        console.log("Original dimensions:", img.width, "x", img.height);
+                        console.log("New dimensions:", width, "x", height);
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convert to blob with 80% quality
+                        canvas.toBlob((blob) => {
+                            console.log("Compressed size:", (blob.size / 1024).toFixed(2), "KB");
+                            console.log("Compression ratio:", ((blob.size / file.size) * 100).toFixed(1), "%");
+
+                            // Create file from blob with photo number
+                            const fileName = `${file.name.split('.')[0]}_${photoNumber}.jpg`;
+                            const compressedFile = new File([blob], fileName, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+
+                            // Upload compressed file
+                            const formData = new FormData();
+                            formData.append("file", compressedFile);
+                            formData.append("is_private", 0);
+                            formData.append("doctype", "Asset Repair");
+                            formData.append("docname", repairName);
+                            formData.append("folder", "Home/Attachments");
+
+                            console.log("Uploading compressed photo for repair:", repairName);
+
+                            fetch("/api/method/upload_file", {
+                                method: "POST",
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log(`Photo ${photoNumber} upload result:`, data);
+                                if (data.message) {
+                                    console.log(`✅ Photo ${photoNumber} uploaded successfully:`, data.message.file_url);
+                                    resolve({ success: true, fileUrl: data.message.file_url, photoNumber: photoNumber });
+                                } else {
+                                    console.error(`❌ Photo ${photoNumber} upload failed - no message in response`);
+                                    resolve({ success: false, error: "No message in response", photoNumber: photoNumber });
+                                }
+                            })
+                            .catch(err => {
+                                console.error(`❌ Photo ${photoNumber} upload error:`, err);
+                                resolve({ success: false, error: err.message, photoNumber: photoNumber });
+                            });
+                        }, 'image/jpeg', 0.8);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // IMPROVEMENT #4: Show maintenance history
+        function showHistory() {
+            if (!currentAsset) return;
+
+            $("#historyAssetName").text(currentAsset.asset_name);
+            $("#historyTimeline").html('<div class="loading">กำลังโหลด...</div>');
+
+            showSection("historySection");
+
+            fetch("/api/method/tub_suite.api.asset.get_maintenance_history?asset_name=" + encodeURIComponent(currentAsset.name))
+                .then(response => response.json())
+                .then(data => {
+                    console.log("History response:", data);
+                    if (data.message && data.message.success) {
+                        displayHistory(data.message.history);
+                    } else {
+                        $("#historyTimeline").html('<div class="loading">ไม่สามารถโหลดประวัติได้</div>');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    $("#historyTimeline").html('<div class="loading">เกิดข้อผิดพลาด: ' + err.message + '</div>');
+                });
+        }
+
+        function displayHistory(history) {
+            if (!history || history.length === 0) {
+                $("#historyTimeline").html('<div class="loading">ไม่มีประวัติการบำรุงรักษา</div>');
+                return;
+            }
+
+            let html = '';
+            history.forEach(function(item) {
+                html += '<div class="timeline-item" data-icon="' + item.icon + '">';
+
+                if (item.type === 'inspection') {
+                    html += '<strong>การตรวจสอบบำรุงรักษา</strong>';
+                    html += '<p class="date">' + formatThaiDate(item.date) + ' ' + (item.time ? formatTime(item.time) : '') + '</p>';
+                    html += '<p class="details">งานที่ทำเสร็จ: ' + item.tasks_completed + ' รายการ</p>';
+                    if (item.inspectors) {
+                        html += '<p class="details">โดย: ' + item.inspectors + '</p>';
+                    }
+                } else if (item.type === 'repair') {
+                    html += '<strong>งานซ่อม</strong>';
+                    html += '<p class="date">' + formatThaiDate(item.date) + '</p>';
+                    html += '<p class="details">' + item.description + '</p>';
+                    html += '<span class="status ' + item.status.toLowerCase().replace(' ', '-') + '">' + item.status + '</span>';
+                    html += '<p class="details" style="margin-top:5px;">รหัสงาน: <a href="/app/asset-repair/' + item.repair_name + '" target="_blank">' + item.repair_name + '</a></p>';
+                    if (item.completion_date) {
+                        html += '<p class="details">เสร็จเมื่อ: ' + formatThaiDate(item.completion_date) + '</p>';
+                    }
+                }
+
+                html += '</div>';
+            });
+
+            $("#historyTimeline").html(html);
+        }
+
+        function formatThaiDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function formatTime(timeStr) {
+            if (!timeStr) return '';
+            const time = new Date(timeStr);
+            return time.toLocaleTimeString('th-TH', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Navigation Functions
+        function showSection(sectionId) {
+            $(".section").removeClass("active");
+            $("#" + sectionId).addClass("active");
+        }
+
+        function showSearch() {
+            showSection("searchSection");
+            $("#searchResults").html("");
+            $("#assetCodeInput").val("");
+        }
+
+        function showAssetDetail() {
+            showSection("assetDetailSection");
+        }
+
+        function resetForm() {
+            currentAsset = null;
+            checklistData = [];
+            currentRepair = null;
+            $("#issueDescription").val("");
+            removePhoto();
+        }
+
+        // Enter key support
+        $("#assetCodeInput").on("keypress", function(e) {
+            if (e.which === 13) searchAssets();
+        });
+
+        // Auto-load asset from QR scan (URL parameter)
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const assetParam = urlParams.get("asset");
+
+            if (assetParam) {
+                console.log("QR Scan detected! Auto-loading asset:", assetParam);
+
+                // If it looks like an asset code, load directly
+                if (assetParam.startsWith("ACC-")) {
+                    loadAssetDetail(assetParam);
+                } else {
+                    // Otherwise search for it
+                    $("#assetCodeInput").val(assetParam);
+                    setTimeout(function() {
+                        searchAssets();
+                    }, 500);
+                }
+            }
+        });
+    </script>
+</body>
+</html>

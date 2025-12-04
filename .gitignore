@@ -1,0 +1,95 @@
+# TUB Suite - Maintenance QR Module
+# Git Ignore File
+
+# Backups
+*.backup
+*.bak
+*.sql.gz
+*.tar
+tub.x-desk.tech/backups/
+
+# Temporary files
+temp/
+*.tmp
+*.temp
+nul
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archives (already archived, don't push to GitHub)
+archives/
+
+# Site-specific configuration
+site_config.json
+*.conf
+*.ini
+
+# Logs
+*.log
+logs/
+
+# QR Foundry (external app, don't include in our repo)
+qr_foundry/
+
+# Deployment-specific
+deployment/*.deployed
+
+# Credentials & Secrets
+*.key
+*.pem
+*.cert
+*.password
+.env
+credentials.json
+
+# Database
+*.db
+*.sqlite
+*.sql
+
+# Generated files
+*.generated
+test_qr_codes/
+
+# Excel lock files
+~$*.xlsx
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# Compressed files (except documentation)
+*.zip
+*.rar
+*.7z
+!docs/*.zip
