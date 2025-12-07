@@ -40,7 +40,15 @@ website_route_rules = [
 # ------------------------
 # Override ERPNext's Asset Repair controller with our custom one
 override_doctype_class = {
-    "Asset Repair": "tub_suite.overrides.asset_repair_override.CustomAssetRepair"
+    "Asset Repair": "tub_suite.overrides.asset_repair.CustomAssetRepair"
+}
+
+# DocType JS
+# ----------
+# Custom client scripts for ERPNext doctypes
+doctype_js = {
+    "Asset": "asset/asset.js",
+    "Asset Repair": "asset_repair/asset_repair.js",
 }
 
 # Document Events
