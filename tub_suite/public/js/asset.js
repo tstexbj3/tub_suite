@@ -1,78 +1,41 @@
-// Asset DocType Client Script - QR Code Display
-
-frappe.ui.form.on("Asset", {
+// Asset form customization - Add QR code button
+frappe.ui.form.on('Asset', {
     refresh: function(frm) {
-        // Add button to generate/view QR code
-        if (frm.doc.name && !frm.is_new()) {
-            frm.add_custom_button(__("View QR Code"), function() {
-                show_qr_code(frm);
-            });
-            
-            frm.add_custom_button(__("Print QR Label"), function() {
-                print_qr_label(frm);
-            });
+        if (!frm.is_new()) {
+            // Add Generate QR Code button
+            frm.add_custom_button(__('Generate QR Code'), function() {
+                generate_asset_maintenance_qr(frm);
+            }, __('Actions'));
         }
     }
 });
 
-function show_qr_code(frm) {
+function generate_asset_maintenance_qr(frm) {
     frappe.call({
-        method: "tub_suite.api.asset.get_asset_qr_code",
+        method: 'tub_suite.overrides.qr_asset_maintenance.generate_asset_qr',
         args: {
             asset_name: frm.doc.name
         },
-        callback: function(r) {
-            if (r.message && r.message.qr_code_url) {
-                const qr_html = "<div class=\"asset-qr-code\">" +
-                    "<img src=\"" + r.message.qr_code_url + "\" alt=\"QR Code\" />" +
-                    "<p><strong>" + frm.doc.asset_name + "</strong></p>" +
-                    "<p>" + frm.doc.name + "</p>" +
-                    "</div>";
-                
-                const d = new frappe.ui.Dialog({
-                    title: __("Asset QR Code: ") + frm.doc.name,
-                    fields: [
-                        {
-                            fieldtype: "HTML",
-                            fieldname: "qr_display",
-                            options: qr_html
-                        }
-                    ]
-                });
-                d.show();
-            } else {
-                frappe.msgprint(__("QR Code not found. Generating now..."));
-                generate_qr_code(frm);
-            }
-        }
-    });
-}
-
-function generate_qr_code(frm) {
-    frappe.call({
-        method: "tub_suite.api.asset.generate_qr_code",
-        args: {
-            doc: frm.doc
-        },
+        freeze: true,
+        freeze_message: __('Generating QR Code...'),
         callback: function(r) {
             if (r.message) {
-                frappe.msgprint(__("QR Code generated successfully"));
+                frappe.msgprint({
+                    title: __('QR Code Generated'),
+                    message: __('QR code has been generated successfully!<br>') +
+                             '<div style="text-align:center; margin-top:15px;">' +
+                             '<img src="' + r.message.file_url + '" style="width:200px;height:200px;border:2px solid #ddd;border-radius:8px;"/>' +
+                             '</div>' +
+                             '<p style="margin-top:15px;"><strong>Scan this QR code to access maintenance portal for this asset.</strong></p>',
+                    primary_action: {
+                        label: __('View QR List'),
+                        action: function() {
+                            frappe.set_route('Form', 'QR List', r.message.qr_list);
+                        }
+                    }
+                });
                 frm.reload_doc();
             }
         }
     });
-}
-
-function print_qr_label(frm) {
-    const print_format = "Asset QR Label";
-    const url = "/api/method/frappe.utils.print_format.download_pdf?" +
-        "doctype=Asset&" +
-        "name=" + encodeURIComponent(frm.doc.name) + "&" +
-        "format=" + encodeURIComponent(print_format) + "&" +
-        "no_letterhead=0";
-    
-    const w = window.open(frappe.urllib.get_full_url(url));
-    if (!w) {
-        frappe.msgprint(__("Please enable pop-ups"));
-    }
 }

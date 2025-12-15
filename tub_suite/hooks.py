@@ -17,41 +17,41 @@ fixtures = [
     {"dt": "Notification"},
 ]
 
-# Include JS & CSS files
-# ----------------------
-app_include_css = "/assets/tub_suite/css/maintenance.css"
-app_include_js = "/assets/tub_suite/js/maintenance.js"
-
-# DocType JS
-# ----------
-doctype_js = {
-    "Asset": "public/js/asset.js",
-}
-
 # Scheduled Tasks
 # ---------------
-scheduler_events = {
-    "daily": [
-        "tub_suite.api.maintenance.send_overdue_notifications"
-    ],
-    "weekly": [
-        "tub_suite.api.maintenance.generate_weekly_report"
-    ],
-}
-
-# Document Events
-# ---------------
-doc_events = {
-    "Asset": {
-        "after_insert": "tub_suite.api.asset.generate_qr_code",
-        "on_update": "tub_suite.api.asset.update_qr_code",
-    }
-}
+# scheduler_events = {
+#     "hourly": [
+#         "tub_suite.api.maintenance.send_overdue_notifications"
+#     ],
+# }
+scheduler_events = {}
 
 # Web Routes
 # ----------
-# Custom web pages for QR scanner and inspector portal
 website_route_rules = [
-    {"from_route": "/qr-scanner/<path:path>", "to_route": "qr-scanner"},
+    {"from_route": "/maintenance", "to_route": "maintenance"},
     {"from_route": "/maintenance/<path:path>", "to_route": "maintenance"},
 ]
+
+# DocType Class Overrides
+# ------------------------
+override_doctype_class = {
+    "Asset Repair": "tub_suite.overrides.asset_repair_override.CustomAssetRepair"
+}
+
+# Document Events
+# -----------------
+doc_events = {
+    "Asset Repair": {
+        "validate": "tub_suite.overrides.asset_repair_override.validate_asset_repair",
+        "before_save": "tub_suite.overrides.asset_repair_override.before_save_asset_repair",
+        "before_submit": "tub_suite.overrides.asset_repair_override.before_submit_asset_repair",
+        "on_update_after_submit": "tub_suite.overrides.asset_repair_override.on_update_after_submit_asset_repair"
+    }
+}
+
+# DocType JavaScript
+# ------------------
+doctype_js = {
+    "Asset": "public/js/asset.js"
+}

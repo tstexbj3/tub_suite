@@ -1,7 +1,33 @@
+# OS Files
 .DS_Store
-*.pyc
-*.egg-info
+Thumbs.db
 *.swp
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.Python
+*.log
+
+# Node.js
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# IDEs
+.vscode/
+.idea/
 tags
-node_modules
-__pycache__
+
+# Temporary/Backup Files
+*-old/
+*-backup*/
+*.old
+.claude/
+
+# Frappe
+*.compiled
+sites/

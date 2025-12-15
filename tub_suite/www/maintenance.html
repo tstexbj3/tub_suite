@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/assets/tub_suite/maintenance/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TUB Maintenance Portal</title>
+    <script>
+        // CSRF token from Frappe server (injected via Jinja template in production)
+        window.csrf_token = '{{ csrf_token }}';
+
+        // Initialize Frappe global object
+        if (!window.frappe) window.frappe = {};
+
+        // Boot data from server (injected via Jinja template in production)
+        {% if boot %}
+        frappe.boot = JSON.parse({{ boot }});
+        {% endif %}
+
+        console.log('TUB Maintenance Portal initializing...');
+        console.log('CSRF token available:', window.csrf_token ? 'YES' : 'NO');
+    </script>
+    <script type="module" crossorigin src="/assets/tub_suite/maintenance/assets/index-C3Q2xM1J.js?v={{ build_version }}"></script>
+    <link rel="stylesheet" crossorigin href="/assets/tub_suite/maintenance/assets/index-CBz4RGW5.css?v={{ build_version }}">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
