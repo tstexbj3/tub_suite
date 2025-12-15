@@ -1,0 +1,22 @@
+{
+  "app_title": "ระบบบำรุงรักษา TUB",
+  "scan_qr": "สแกน QR Code",
+  "search_asset": "ค้นหาสินทรัพย์",
+  "asset_name": "ชื่อสินทรัพย์",
+  "maintenance_tasks": "รายการบำรุงรักษา",
+  "complete_task": "ทำงานเสร็จสิ้น",
+  "report_issue": "รายงานปัญหา",
+  "take_photo": "ถ่ายรูป",
+  "inspection_photos": "รูปภาพการตรวจสอบ",
+  "issue_photos": "รูปภาพปัญหา",
+  "verification_photos": "รูปภาพหลังการซ่อม",
+  "min_photos_required": "ต้องมีอย่างน้อย 1 รูป",
+  "max_photos": "สูงสุด 5 รูป",
+  "verify_repair": "ยืนยันการซ่อม",
+  "verified_passed": "ยืนยัน - ผ่าน",
+  "verified_failed": "ยืนยัน - ไม่ผ่าน",
+  "submit": "ส่ง",
+  "cancel": "ยกเลิก",
+  "notes": "บันทึก",
+  "issue_description": "รายละเอียดปัญหา"
+}

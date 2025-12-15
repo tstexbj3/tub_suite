@@ -1,0 +1,22 @@
+{
+  "app_title": "TUB Maintenance Portal",
+  "scan_qr": "Scan QR Code",
+  "search_asset": "Search Asset",
+  "asset_name": "Asset Name",
+  "maintenance_tasks": "Maintenance Tasks",
+  "complete_task": "Complete Task",
+  "report_issue": "Report Issue",
+  "take_photo": "Take Photo",
+  "inspection_photos": "Inspection Photos",
+  "issue_photos": "Issue Photos",
+  "verification_photos": "After-Repair Photos",
+  "min_photos_required": "At least 1 photo required",
+  "max_photos": "Maximum 5 photos",
+  "verify_repair": "Verify Repair",
+  "verified_passed": "Verified - Passed",
+  "verified_failed": "Verified - Failed",
+  "submit": "Submit",
+  "cancel": "Cancel",
+  "notes": "Notes",
+  "issue_description": "Issue Description"
+}
