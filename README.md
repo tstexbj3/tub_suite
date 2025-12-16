@@ -36,8 +36,10 @@ Built on **ERPNext v15** / **Frappe Framework v15**
 - **QR Code Scanning:** Quick asset identification via mobile camera
 - **Maintenance Checklists:** Task-based inspections with due dates
 - **Issue Reporting:** Multi-photo upload with descriptions
-- **Repair Workflow:** Automatic repair request creation
-- **Asset Status Management:** Out of Order detection and tracking
+- **Repair Workflow:** Automatic repair request creation with reporter verification
+- **Asset Status Management:** Out of Order detection and automatic restoration
+- **Verification System:** Original reporter verifies completed repairs before asset restoration
+- **Pending Verifications:** Home page alerts for repairs awaiting verification
 - **Bilingual Interface:** Switch between English/Thai
 
 ### Backend API
@@ -76,20 +78,26 @@ bench --site [site-name] clear-cache
 bench restart
 ```
 
-### Frontend Build (if React source included)
+### Frontend Build (React Portal)
 
 ```bash
-cd ~/frappe-bench/apps/tub_suite
+cd ~/frappe-bench/apps/tub_suite/maintenance-react-dev
 
-# Install dependencies
+# First time setup
 npm install
 
-# Build for production
+# Build and deploy (automated - updates template hash automatically)
+./deploy.sh
+
+# Manual build (requires manual hash update in maintenance.html)
 npm run build
+./update-hash.sh
 
 # Development mode (with hot reload)
 npm run dev
 ```
+
+**⚠️ Important:** After building, always run `./deploy.sh` or `./update-hash.sh` to sync asset hashes in the HTML template.
 
 ### Migration from v1.x
 
@@ -100,9 +108,10 @@ If upgrading from jQuery version (v1.x):
 cd ~/frappe-bench/apps/tub_suite
 git pull
 
-# Build frontend
+# Build frontend with new automated deploy
+cd maintenance-react-dev
 npm install
-npm run build
+./deploy.sh
 
 # Migrate database (if needed)
 bench --site [site-name] migrate
@@ -135,20 +144,74 @@ https://your-erpnext-site.com/app
 
 ### User Roles
 
-| Role | Access |
-|------|--------|
-| **Maintenance Inspector** | Mobile portal, QR scanning, checklist completion |
-| **Maintenance Engineer** | Full access, repair management, desktop interface |
-| **Maintenance Manager** | Full access, approval workflow, reports |
+| Role | Access | Permissions |
+|------|--------|-------------|
+| **Maintenance User** | Mobile portal ONLY | QR scanning, checklist completion, issue reporting, repair verification |
+| **Engineering Team** | ERPNext desk + portal | Repair management, work completion, full CRUD |
+| **Maintenance Manager** | ERPNext desk + portal | Approval workflow, reports, override verification |
 
-### Workflow
+**Note:** Maintenance User role has NO desk access - they work exclusively through the mobile portal.
 
-1. **Scan QR Code** on asset (via mobile)
-2. **Complete Checklist** - Mark tasks as done
-3. **Report Issues** - Upload photos and describe problems
-4. **Auto-Created Repair** - System creates repair request if issue reported
-5. **Asset Status Update** - Asset marked "Out of Order" if needed
-6. **Manager Approval** - Engineers review and complete repairs
+### Complete Repair Workflow
+
+#### 1. Issue Reporting (Inspector/Maintenance User)
+- Scan asset QR code via mobile portal
+- Complete maintenance checklist
+- Report issue with photos and description
+- **System tracks `reported_by` field** (original reporter email)
+
+#### 2. Repair Creation & Approval (Engineer + Manager)
+- System auto-creates Asset Repair document
+- Engineer fills repair details and sets **Issue Severity**:
+  - **Minor - Asset Operational**: Asset stays operational
+  - **Major - Asset Must Stop**: Asset goes "Out of Order" upon approval
+- Engineer submits for manager approval
+
+#### 3. Manager Approval
+- Manager reviews repair request
+- If approved and severity = "Major" → **Asset status changes to "Out of Order"**
+
+#### 4. Repair Completion (Engineer)
+- Engineer performs repair work
+- Clicks workflow: **"Job Finished"**
+- **System auto-fills `completion_date`** (timestamp when engineer finished)
+- **System sends notification** to original reporter
+- Asset stays "Out of Order" until verified
+
+#### 5. Verification (Original Reporter)
+- Original reporter opens mobile portal
+- **Home page shows red alert** with pending verifications counter
+- Reporter scans asset QR code
+- Uploads verification photos
+- Adds verification notes
+- Selects status: "Verified - Passed" or "Verified - Failed"
+- Submits verification
+
+#### 6. Asset Restoration (Automatic)
+
+**If verification = "Verified - Passed":**
+- System checks for other open Major repairs on same asset
+- If none → **Asset automatically restores to "Submitted" (operational)**
+- If other Major repairs exist → Asset stays "Out of Order"
+
+**If verification = "Verified - Failed":**
+- Asset stays "Out of Order"
+- Workflow state stays "Finished"
+- Engineer must re-do the repair
+- Manager can see verification notes and decide next action:
+  - Reject repair → Send back to engineer
+  - Or manually change workflow back to "Approved" for engineer to fix
+
+**Data Stored:**
+```
+Asset Repair Document:
+├── completion_date: When engineer finished job
+├── verification_date: When reporter verified
+├── verification_status: "Verified - Passed" / "Verified - Failed"
+├── verification_notes: Reporter's notes
+├── verified_by: Reporter's email
+└── Attached Files: Verification photos
+```
 
 ---
 

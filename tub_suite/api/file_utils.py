@@ -157,7 +157,7 @@ def get_maintenance_photos(doctype, docname, activity_type=None):
 
     files = frappe.get_all("File",
         filters=filters,
-        fields=["name", "file_name", "file_url", "description", "creation"],
+        fields=["name", "file_name", "file_url", "creation"],
         order_by="creation asc"
     )
 
@@ -165,9 +165,13 @@ def get_maintenance_photos(doctype, docname, activity_type=None):
 
     for file in files:
         try:
+            # Get description field from database (might be custom field)
+            file_doc = frappe.get_doc("File", file.name)
+            description = getattr(file_doc, 'description', None)
+
             # Parse metadata from description
-            if file.description:
-                metadata = json.loads(file.description)
+            if description:
+                metadata = json.loads(description)
             else:
                 # Handle photos without metadata (legacy or manual uploads)
                 metadata = {}

@@ -36,9 +36,18 @@ export const addTimestampToPhoto = (file) => {
   })
 }
 
-export const uploadPhoto = async (file) => {
+export const uploadPhoto = async (file, assetName, activityType, sequence) => {
+  // Generate structured filename: ASSET_ACTIVITY_TIMESTAMP_SEQ_USER.jpg
+  const timestamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15)
+  const assetCode = assetName.replace(/[^A-Z0-9]/g, '').toUpperCase().slice(0, 15)
+  const user = (window.frappe?.session?.user || 'USER').split('@')[0].toUpperCase().slice(0, 8)
+  const filename = `${assetCode}_${activityType}_${timestamp}_${sequence}_${user}.jpg`
+
+  // Create new file with structured name
+  const renamedFile = new File([file], filename, { type: file.type })
+
   const formData = new FormData()
-  formData.append('file', file)
+  formData.append('file', renamedFile)
   formData.append('is_private', 0)
 
   const response = await fetch('/api/method/upload_file', {

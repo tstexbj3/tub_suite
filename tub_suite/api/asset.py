@@ -250,8 +250,8 @@ def get_asset_history(asset_name, limit=10):
 # API ENDPOINTS (ENHANCED WITH SECURITY)
 # ============================================================================
 
-@frappe.whitelist(allow_guest=False, methods=['GET'])
-def search_assets(asset_code):
+@frappe.whitelist(allow_guest=False)
+def search_assets(query):
     """
     Search for multiple assets by code - returns up to 10 results
 
@@ -266,7 +266,7 @@ def search_assets(asset_code):
     validate_maintenance_role()
 
     # Sanitize input
-    asset_code = sanitize_input(asset_code, max_length=100)
+    asset_code = sanitize_input(query, max_length=100)
 
     if not asset_code or len(asset_code) < 2:
         return {
@@ -304,7 +304,7 @@ def search_assets(asset_code):
             "message": "An error occurred during search"
         }
 
-@frappe.whitelist(allow_guest=False, methods=['GET'])
+@frappe.whitelist(allow_guest=False)
 def get_asset_with_checklist(asset_name):
     """
     Get asset details including maintenance checklist
@@ -515,7 +515,7 @@ def get_asset_with_checklist(asset_name):
             "message": "An error occurred while loading asset details"
         }
 
-@frappe.whitelist(allow_guest=False, methods=['POST'])
+@frappe.whitelist(allow_guest=False)
 def submit_checklist(asset_name, checklist_data, issue_description=None):
     """
     Submit completed checklist
@@ -610,7 +610,7 @@ def submit_checklist(asset_name, checklist_data, issue_description=None):
         frappe.db.rollback()
         return {"success": False, "message": "An error occurred while submitting checklist"}
 
-@frappe.whitelist(allow_guest=False, methods=['GET'])
+@frappe.whitelist(allow_guest=False)
 def get_maintenance_history(asset_name):
     """
     Get maintenance history for an asset (last 10 items)

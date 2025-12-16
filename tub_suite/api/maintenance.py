@@ -79,15 +79,20 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
         validate_photo_requirements(len(issue_photos), "ISSUE", has_issue=1)
 
     # Create Asset Maintenance Log
-    log = frappe.get_doc({
+    log_data = {
         "doctype": "Asset Maintenance Log",
         "asset_maintenance": maintenance_name,
         "task": task_name,
         "asset_name": asset_name,
-        "completion_date": frappe.utils.nowdate(),
-        "maintenance_status": "Completed" if not has_issue else "Needs Attention",
+        "maintenance_status": "Completed" if not has_issue else "Planned",
         "actions_performed": notes  # Save notes to actions_performed field
-    })
+    }
+
+    # Only set completion_date if no issue (status = Completed)
+    if not has_issue:
+        log_data["completion_date"] = frappe.utils.nowdate()
+
+    log = frappe.get_doc(log_data)
 
     log.insert(ignore_permissions=True)
 
@@ -101,13 +106,18 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
     # If has issue, create repair request and change asset status
     repair_name = None
     if has_issue:
+        # Get task details to populate maintenance_task field
+        task_doc = frappe.get_doc("Asset Maintenance Task", task_name)
+        task_label = task_doc.maintenance_task or task_doc.task_name or "Unnamed Task"
+
         repair = frappe.get_doc({
             "doctype": "Asset Repair",
             "asset": asset_name,
-            "failure_description": issue_description,
+            "failure_date": frappe.utils.nowdate(),
+            "description": issue_description,
             "repair_status": "Pending",
-            "error_description": issue_description,
             "reported_by": frappe.session.user,  # Track who reported
+            "maintenance_task": task_label,  # Which task this came from
             "requires_inspector_verification": 1,  # Enable verification workflow
             "verification_status": "Pending Verification"
         })
@@ -123,43 +133,43 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
         # when they set issue_severity to "Major - Asset Must Stop"
         # Minor issues keep asset operational
 
-    # Update task last completion date and next due date (only if no issue)
-    if not has_issue:
-        from frappe.utils import add_days, add_months, nowdate
+    # Update task last completion date and next due date
+    # ALWAYS update - inspector completed the task regardless of issue reported
+    from frappe.utils import add_days, add_months, nowdate
 
-        # Get the task to find periodicity
-        task_doc = frappe.get_doc("Asset Maintenance Task", task_name)
+    # Get the task to find periodicity
+    task_doc = frappe.get_doc("Asset Maintenance Task", task_name)
 
-        # Update last completion date
-        task_doc.last_completion_date = nowdate()
+    # Update last completion date (ALWAYS)
+    task_doc.last_completion_date = nowdate()
 
-        # Calculate next due date based on periodicity
-        completion_date = frappe.utils.getdate(nowdate())
-        periodicity = task_doc.periodicity
+    # Calculate next due date based on periodicity
+    completion_date = frappe.utils.getdate(nowdate())
+    periodicity = task_doc.periodicity
 
-        if periodicity == "Daily":
-            next_due = add_days(completion_date, 1)
-        elif periodicity == "Weekly":
-            next_due = add_days(completion_date, 7)
-        elif periodicity == "Monthly":
-            next_due = add_months(completion_date, 1)
-        elif periodicity == "Quarterly":
-            next_due = add_months(completion_date, 3)
-        elif periodicity == "Half-yearly":
-            next_due = add_months(completion_date, 6)
-        elif periodicity == "Yearly":
-            next_due = add_months(completion_date, 12)
-        elif periodicity == "2 Yearly":
-            next_due = add_months(completion_date, 24)
-        elif periodicity == "3 Yearly":
-            next_due = add_months(completion_date, 36)
-        else:
-            # Default to 1 month if periodicity not recognized
-            next_due = add_months(completion_date, 1)
+    if periodicity == "Daily":
+        next_due = add_days(completion_date, 1)
+    elif periodicity == "Weekly":
+        next_due = add_days(completion_date, 7)
+    elif periodicity == "Monthly":
+        next_due = add_months(completion_date, 1)
+    elif periodicity == "Quarterly":
+        next_due = add_months(completion_date, 3)
+    elif periodicity == "Half-yearly":
+        next_due = add_months(completion_date, 6)
+    elif periodicity == "Yearly":
+        next_due = add_months(completion_date, 12)
+    elif periodicity == "2 Yearly":
+        next_due = add_months(completion_date, 24)
+    elif periodicity == "3 Yearly":
+        next_due = add_months(completion_date, 36)
+    else:
+        # Default to 1 month if periodicity not recognized
+        next_due = add_months(completion_date, 1)
 
-        task_doc.next_due_date = next_due
-        task_doc.save(ignore_permissions=True)
-        frappe.logger().info(f"Updated task {task_name}: last_completion={nowdate()}, next_due={next_due}")
+    task_doc.next_due_date = next_due
+    task_doc.save(ignore_permissions=True)
+    frappe.logger().info(f"Updated task {task_name}: last_completion={nowdate()}, next_due={next_due}")
 
     frappe.db.commit()
 
@@ -167,6 +177,7 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
         "success": True,
         "log_name": log.name,
         "repair_name": repair_name,
+        "has_issue": has_issue,
         "message": _("Maintenance task completed successfully") if not has_issue else _("Issue reported. Repair request created. Asset status: Out of Order")
     }
 
@@ -243,7 +254,7 @@ def get_pending_repairs(asset_name=None):
 
     repairs = frappe.get_all("Asset Repair",
         filters=filters,
-        fields=["name", "asset", "failure_description", "repair_status", "creation", "error_description"],
+        fields=["name", "asset", "description", "repair_status", "creation"],
         order_by="creation desc"
     )
 
@@ -265,6 +276,7 @@ def get_maintenance_by_asset(asset_name):
     """
     try:
         import traceback
+        print(f"\n🔵 API CALLED: get_maintenance_by_asset({asset_name}) - v2.0.1 CODE LOADED\n")
         frappe.logger().info(f"get_maintenance_by_asset called with asset_name: {asset_name}")
 
         if not asset_name:
@@ -323,6 +335,64 @@ def get_maintenance_by_asset(asset_name):
                     task["asset_name"] = asset.name
                     task["item_code"] = asset.item_code
                     task["item_name"] = asset.item_name
+
+                    # Check if this task has an open issue reported today
+                    today = frappe.utils.nowdate()
+
+                    # Convert last_completion_date to string for comparison (it's a date object)
+                    last_completed = str(task.get("last_completion_date")) if task.get("last_completion_date") else None
+
+                    if last_completed == today:
+                        # Check if there's a pending repair for THIS SPECIFIC TASK created today
+                        # Use workflow_state instead of repair_status (workflow doesn't update repair_status until "Finished")
+                        open_repairs = frappe.get_all("Asset Repair", filters={
+                            "asset": asset.name,
+                            "maintenance_task": task.get("maintenance_task"),  # ✅ Filter by specific task
+                            "failure_date": today,
+                            "workflow_state": ["not in", ["Finished", "Cancelled", "Rejected"]]
+                        }, fields=["name", "workflow_state", "repair_status", "maintenance_task"])
+
+                        task["has_open_issue"] = 1 if len(open_repairs) > 0 else 0
+
+                        # DEBUG: Print to console to verify new code is running
+                        print(f"\n=== BADGE DEBUG ===")
+                        print(f"Asset: {asset.name}")
+                        print(f"Task: {task.get('maintenance_task')}")
+                        print(f"Last completed: {task.get('last_completion_date')}")
+                        print(f"Today: {today}")
+                        print(f"Open repairs found: {len(open_repairs)}")
+                        for r in open_repairs:
+                            print(f"  - {r.name}: workflow_state={r.workflow_state}")
+                        print(f"Setting has_open_issue = {task['has_open_issue']}")
+                        print(f"===================\n")
+
+                        frappe.logger().info(f"Task {task['name']}: last_completed={task.get('last_completion_date')}, today={today}, open_repairs={len(open_repairs)}, workflow_states={[r.workflow_state for r in open_repairs]}")
+                    else:
+                        task["has_open_issue"] = 0
+
+                    # Calculate next_due_date if not set
+                    if not task.get("next_due_date") and task.get("last_completion_date"):
+                        from frappe.utils import add_days, add_months
+                        completion_date = frappe.utils.getdate(task["last_completion_date"])
+                        periodicity = task.get("periodicity")
+
+                        if periodicity == "Daily":
+                            task["next_due_date"] = str(add_days(completion_date, 1))
+                        elif periodicity == "Weekly":
+                            task["next_due_date"] = str(add_days(completion_date, 7))
+                        elif periodicity == "Monthly":
+                            task["next_due_date"] = str(add_months(completion_date, 1))
+                        elif periodicity == "Quarterly":
+                            task["next_due_date"] = str(add_months(completion_date, 3))
+                        elif periodicity == "Half-yearly":
+                            task["next_due_date"] = str(add_months(completion_date, 6))
+                        elif periodicity == "Yearly":
+                            task["next_due_date"] = str(add_months(completion_date, 12))
+                        elif periodicity == "2 Yearly":
+                            task["next_due_date"] = str(add_months(completion_date, 24))
+                        elif periodicity == "3 Yearly":
+                            task["next_due_date"] = str(add_months(completion_date, 36))
+
                     asset_tasks.append(task)
 
             # Add this asset to results (even if it has no tasks)
@@ -418,8 +488,7 @@ def get_repair_for_verification(repair_name):
                 "asset_name": asset.asset_name,
                 "item_code": asset.item_code,
                 "location": asset.location,
-                "failure_description": repair.failure_description,
-                "error_description": repair.error_description,
+                "description": repair.description,
                 "actions_performed": repair.actions_performed or "",
                 "repair_status": repair.repair_status,
                 "verification_status": repair.verification_status or "Pending Verification",
@@ -514,3 +583,75 @@ def verify_repair_completion(repair_name, verification_photos=None, verification
         frappe.logger().error(f"Error verifying repair: {str(e)}")
         frappe.db.rollback()
         frappe.throw(_("Error submitting verification: {0}").format(str(e)))
+
+
+@frappe.whitelist()
+def get_repairs_needing_verification():
+    """
+    Get repairs that are finished and need verification by the logged-in user
+    Returns repairs where:
+    - workflow_state = "Finished"
+    - reported_by = current user
+    - verification_status != "Verified - Passed"
+
+    Used by mobile portal to show pending verifications to original reporters
+    """
+    try:
+        repairs = frappe.get_all("Asset Repair",
+            filters={
+                "workflow_state": "Finished",
+                "reported_by": frappe.session.user,
+                "verification_status": ["!=", "Verified - Passed"]
+            },
+            fields=[
+                "name", "asset", "description", "failure_date",
+                "workflow_state", "verification_status", "reported_by",
+                "actions_performed", "completion_date", "repair_status"
+            ],
+            order_by="failure_date desc"
+        )
+
+        # Enrich with asset details
+        for repair in repairs:
+            if repair.asset:
+                asset = frappe.get_doc("Asset", repair.asset)
+                repair["asset_name"] = asset.asset_name
+                repair["item_code"] = asset.item_code
+                repair["item_name"] = asset.item_name
+                repair["location"] = asset.location or ""
+
+        return repairs
+
+    except Exception as e:
+        frappe.logger().error(f"Error fetching repairs needing verification: {str(e)}")
+        return []
+
+
+@frappe.whitelist()
+def get_user_roles():
+    """
+    Get roles for the current logged-in user
+    Used by mobile portal to control UI visibility
+    """
+    return frappe.get_roles()
+
+
+@frappe.whitelist(allow_guest=False)
+def get_portal_settings():
+    """
+    Get portal settings for controlling UI features
+    Returns settings like search visibility, etc.
+    """
+    try:
+        settings = frappe.get_single("Maintenance Portal Settings")
+        return {
+            "enable_search_for_all": settings.get("enable_search_for_all_users") or 0,
+            "search_allowed_roles": ["Maintenance Manager", "System Manager", "Administrator"]
+        }
+    except Exception as e:
+        frappe.logger().error(f"Error fetching portal settings: {str(e)}")
+        # Return default settings if not configured yet
+        return {
+            "enable_search_for_all": 0,
+            "search_allowed_roles": ["Maintenance Manager", "System Manager", "Administrator"]
+        }

@@ -18,5 +18,6 @@
   "submit": "ส่ง",
   "cancel": "ยกเลิก",
   "notes": "บันทึก",
-  "issue_description": "รายละเอียดปัญหา"
+  "issue_description": "รายละเอียดปัญหา",
+  "back": "กลับ"
 }

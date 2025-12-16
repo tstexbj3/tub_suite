@@ -1,5 +1,3 @@
-const API_BASE = '/api/method/tub_suite.api'
-
 const callAPI = async (method, args = {}) => {
   const response = await fetch(`/api/method/${method}`, {
     method: 'POST',
@@ -17,17 +15,17 @@ const callAPI = async (method, args = {}) => {
 
 export default {
   searchAssets: (query) => 
-    callAPI('asset.search_assets', { query }),
+    callAPI('tub_suite.api.asset.search_assets', { query }),
 
   getMaintenanceTasks: (assetName) => 
-    callAPI('maintenance.get_maintenance_by_asset', { asset_name: assetName }),
+    callAPI('tub_suite.api.maintenance.get_maintenance_by_asset', { asset_name: assetName }),
 
   submitTask: (params) => 
-    callAPI('maintenance.submit_maintenance_task', params),
+    callAPI('tub_suite.api.maintenance.submit_maintenance_task', params),
 
   getRepairForVerification: (repairName) => 
-    callAPI('maintenance.get_repair_for_verification', { repair_name: repairName }),
+    callAPI('tub_suite.api.maintenance.get_repair_for_verification', { repair_name: repairName }),
 
   verifyRepair: (params) => 
-    callAPI('maintenance.verify_repair_completion', params)
+    callAPI('tub_suite.api.maintenance.verify_repair_completion', params)
 }

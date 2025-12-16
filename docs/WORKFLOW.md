@@ -202,7 +202,9 @@ Complete workflow documentation for TUB Suite v2.0.0 maintenance management syst
 # - has_issue = 1
 # - issue_photos required (min 1)
 # - Creates Asset Repair request
-# - Sets reported_by = current user
+# - Sets description = issue_description (LOCKED, read-only)
+# - Sets reported_by = current user (LOCKED)
+# - Sets failure_date = current date (LOCKED)
 # - Sets verification_status = "Pending Verification"
 # - Asset status: UNCHANGED (waits for engineer severity assessment)
 ```
@@ -245,7 +247,8 @@ Complete workflow documentation for TUB Suite v2.0.0 maintenance management syst
 ### 3. Repair Execution
 - Engineer performs repair work
 - Sets expected completion date
-- Updates repair notes
+- Documents repair in `actions_performed` field (editable)
+- Cannot modify issue `description` (locked, set by inspector)
 - Takes repair process photos (optional)
 
 ### 4. Repair Completion
@@ -528,8 +531,8 @@ submit_maintenance_task(
     task_name,
     asset_name,
     has_issue=0,
-    issue_description="",
-    notes="",
+    issue_description="",  # Goes to Asset Repair.description (if has_issue=1)
+    notes="",              # Goes to Asset Maintenance Log.actions_performed
     inspection_photos=[],  # For normal completion
     issue_photos=[]        # For issue reporting
 )
@@ -541,10 +544,28 @@ get_repair_for_verification(repair_name)
 verify_repair_completion(
     repair_name,
     verification_photos=[],
-    verification_notes="",
+    verification_notes="",  # Goes to Asset Repair.verification_notes
     verification_status="Verified - Passed"
 )
 ```
+
+### Field Mappings
+
+#### Asset Maintenance Log (Normal Completion)
+- `actions_performed`: Inspector's notes from portal
+- `maintenance_status`: "Completed"
+- `completion_date`: Auto-filled on submission
+
+#### Asset Repair (Issue Reported)
+- `description`: Issue description from portal (LOCKED, read-only for engineers)
+- `failure_date`: Date issue reported (LOCKED)
+- `reported_by`: Inspector who reported (LOCKED)
+- `actions_performed`: Engineer's repair notes (EDITABLE)
+- `issue_severity`: Set by engineer (Minor/Major)
+- `expected_completion_date`: Set by engineer
+- `completion_date`: Auto-filled when status = Completed
+- `verification_notes`: Inspector's verification notes (EDITABLE during verification)
+- `verification_status`: Verification result (Pending/Passed/Failed)
 
 ---
 

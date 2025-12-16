@@ -177,15 +177,25 @@ fixtures = [
 
 ### Fields Added to Asset Repair
 
-| Field Name | Type | Description |
-|------------|------|-------------|
-| `reported_by` | Link (User) | Inspector who reported the issue |
-| `expected_completion_date` | Date | When engineer expects to finish |
-| `requires_inspector_verification` | Check | If inspector must verify repair |
-| `verified_by` | Link (User) | Inspector who verified repair |
-| `verification_date` | Datetime | When inspector verified |
-| `verification_notes` | Small Text | Inspector's verification notes |
-| `verification_status` | Select | Pending/Verified-Passed/Failed |
+| Field Name | Type | Description | Editable By |
+|------------|------|-------------|-------------|
+| `reported_by` | Link (User) | Inspector who reported the issue | Auto-set (LOCKED) |
+| `expected_completion_date` | Date | When engineer expects to finish | Engineer |
+| `issue_severity` | Select | Minor/Major severity | Engineer |
+| `requires_inspector_verification` | Check | If inspector must verify repair | Auto-set |
+| `verified_by` | Link (User) | Inspector who verified repair | Auto-set |
+| `verification_date` | Datetime | When inspector verified | Auto-set |
+| `verification_notes` | Small Text | Inspector's verification notes | Inspector |
+| `verification_status` | Select | Pending/Verified-Passed/Failed | Inspector |
+
+### Standard Fields Modified
+
+| Field Name | Original Use | New Behavior |
+|------------|--------------|--------------|
+| `description` | Repair description | Issue description from inspector (LOCKED) |
+| `actions_performed` | Repair notes | Engineer's repair documentation (EDITABLE) |
+| `failure_date` | Date of failure | Date issue reported (LOCKED) |
+| `completion_date` | Manual entry | Auto-filled when status = Completed |
 
 ### Fields Added to Asset
 
@@ -307,7 +317,32 @@ const canSearch = userRole === 'Maintenance Manager' ||
 
 ## Post-Installation
 
-### 1. Generate QR Codes for Assets
+### 1. Run Asset Repair Field Setup
+
+**IMPORTANT:** Run this setup script once after installation to configure Asset Repair field locking.
+
+```bash
+bench --site [your-site-name] execute tub_suite.setup.asset_repair_setup.run_production_setup
+```
+
+This script will:
+- ✓ Fix severity field options (remove blank option)
+- ✓ Lock protected fields (failure_date, description, reported_by)
+- ✓ Create Server Script for backend validation
+- ✓ Create Client Script for UI behavior
+- ✓ Auto-fill completion_date when repair completed
+
+**What gets locked:**
+- `description`: Issue description from inspector (read-only for engineers)
+- `failure_date`: Date issue reported (auto-set, read-only)
+- `reported_by`: Inspector who reported (auto-set, read-only)
+
+**What stays editable:**
+- `actions_performed`: Engineer documents repair work here
+- `issue_severity`: Engineer sets Minor/Major
+- `expected_completion_date`: Engineer sets target date
+
+### 2. Generate QR Codes for Assets
 
 ```bash
 bench --site [your-site-name] console

@@ -14,7 +14,10 @@ fixtures = [
     {"dt": "Workflow State"},
     {"dt": "Workflow Action Master"},
     {"dt": "Role"},
-    {"dt": "Notification"},
+    {
+        "dt": "DocType",
+        "filters": [["name", "in", ["Asset Repair Engineering Detail"]]]
+    },
 ]
 
 # Scheduled Tasks

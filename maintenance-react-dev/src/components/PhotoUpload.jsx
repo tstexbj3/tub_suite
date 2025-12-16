@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { addTimestampToPhoto, uploadPhoto } from '../services/photoService'
 
-export default function PhotoUpload({ photos, setPhotos, activityType }) {
+export default function PhotoUpload({ photos, setPhotos, activityType, assetName }) {
   const { t } = useTranslation()
 
   const handlePhotoCapture = async (e) => {
@@ -15,10 +15,11 @@ export default function PhotoUpload({ photos, setPhotos, activityType }) {
 
     // Add timestamp overlay
     const photoWithTimestamp = await addTimestampToPhoto(file)
-    
-    // Upload to Frappe
-    const url = await uploadPhoto(photoWithTimestamp)
-    
+
+    // Upload to Frappe with structured naming
+    const sequence = photos.length + 1
+    const url = await uploadPhoto(photoWithTimestamp, assetName, activityType, sequence)
+
     setPhotos([...photos, url])
   }
 

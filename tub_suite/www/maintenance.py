@@ -23,6 +23,11 @@ def get_context(context):
     frappe.logger().info("========== MAINTENANCE get_context() CALLED ==========")
     frappe.logger().info(f"User: {frappe.session.user}")
 
+    # Check authentication - redirect to login if guest
+    if frappe.session.user == "Guest":
+        frappe.local.flags.redirect_location = "/login?redirect-to=/maintenance"
+        raise frappe.Redirect
+
     # Generate CSRF token
     csrf_token = frappe.sessions.get_csrf_token()
     frappe.logger().info(f"Generated CSRF token: {csrf_token[:20]}...")

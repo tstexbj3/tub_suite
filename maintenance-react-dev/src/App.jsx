@@ -13,7 +13,7 @@ function App() {
   }
 
   return (
-    <Router>
+    <Router basename="/maintenance">
       <div className="app">
         <header>
           <h1>TUB Maintenance Portal</h1>
