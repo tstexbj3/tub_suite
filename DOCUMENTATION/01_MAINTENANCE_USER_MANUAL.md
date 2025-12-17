@@ -33,6 +33,7 @@
 ### Understanding Your Role
 
 As a **Maintenance User**, you have access to:
+- ✅ **My Tasks** - View your assigned maintenance tasks (overdue, due today, upcoming)
 - ✅ QR Code Scanner - Scan assets for inspection
 - ✅ Maintenance Checklists - Complete daily/weekly/monthly tasks
 - ✅ Issue Reporting - Report problems with photos
@@ -47,6 +48,108 @@ As a **Maintenance User**, you have access to:
 ## Daily Workflow
 
 ### Typical Day Routine
+
+**RECOMMENDED WORKFLOW:**
+
+1. **Check My Tasks** (📋)
+   - Open the portal: `http://localhost:8000/maintenance`
+   - Click "My Tasks" card on home page
+   - View your assigned maintenance tasks:
+     - 🔥 **Overdue** (Red) - Complete these first!
+     - ⚠️ **Due Today** (Orange) - Complete today
+     - 📅 **Upcoming** (Blue) - Tasks due in next 7 days
+   - Click any task card to go directly to that asset's checklist
+
+2. **Scan QR Codes**
+   - Alternative to My Tasks
+   - Scan QR code on physical asset
+   - Complete the checklist
+
+3. **Report Issues**
+   - If you find problems during inspection
+   - Take photos (minimum 2 required)
+   - Describe the issue
+
+4. **Verify Repairs**
+   - Check "Pending Verifications" alert (if any)
+   - Verify completed repairs with photos
+   - Sign off on repair quality
+
+---
+
+## My Tasks Feature
+
+### Overview
+
+The **My Tasks** page shows all maintenance tasks assigned to you, organized by urgency. This is your daily todo list.
+
+### Accessing My Tasks
+
+1. From **Home Page:**
+   - Click the "📋 My Tasks" card
+   - OR navigate to: `http://localhost:8000/maintenance/todos`
+
+2. You will see:
+   - **Summary Stats** at top:
+     - Overdue count (red)
+     - Due Today count (orange)
+     - Upcoming count (blue)
+   - **Task Sections:**
+     - Overdue tasks (if any)
+     - Due Today tasks
+     - Upcoming tasks (next 7 days)
+
+### Task Assignment Rules
+
+**CRITICAL: You only see tasks where:**
+- `Asset Maintenance Task.assign_to` field = **Your email address**
+- Asset Maintenance is Submitted (docstatus = 1)
+- Maintenance Status = "Planned" (active schedules)
+- `next_due_date` is set
+
+**Example:**
+- If you're logged in as `test_maintenance_repair@test.com`
+- You will ONLY see tasks assigned to `test_maintenance_repair@test.com`
+- If logged in as `admin@example.com`, you see tasks assigned to `admin@example.com`
+
+**If you see "All Caught Up!":**
+- Either no tasks are assigned to your email, OR
+- No tasks are due within the next 7 days, OR
+- No Asset Maintenance records exist
+
+### Task Card Information
+
+Each task card shows:
+- **Asset Name** - Which equipment to inspect
+- **Asset Code** - Asset identifier (e.g., ACC-ASS-2025-00019)
+- **Task Name** - What to do (e.g., "Daily Pressure Check")
+- **Due Status Badge:**
+  - Red = X days late
+  - Orange = Due Today
+  - Blue = Due on [date]
+- **Location** 📍 - Where to find the asset
+- **Periodicity** 🔄 - How often (Daily, Weekly, Monthly, etc.)
+- **Maintenance Type** 🔧 - Type of maintenance
+
+### Using My Tasks
+
+1. **Click any task card** to go directly to that asset's checklist
+2. **Complete the inspection** as normal
+3. **Task automatically updates** after completion:
+   - `last_completion_date` is set
+   - `next_due_date` is calculated based on periodicity
+   - Task moves to upcoming or disappears from overdue
+
+### Priority Order
+
+Always complete tasks in this order:
+1. 🔥 **Overdue** (highest priority)
+2. ⚠️ **Due Today** (medium priority)
+3. 📅 **Upcoming** (plan ahead)
+
+---
+
+## Scanning Assets
 
 ```
 Morning:

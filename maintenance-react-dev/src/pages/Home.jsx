@@ -124,6 +124,20 @@ export default function Home() {
       )}
 
       <div className="home-grid">
+        {/* My Tasks Card - ONLY for Maintenance User role */}
+        {userRoles.includes('Maintenance User') && (
+          <div className="home-card" onClick={() => navigate('/todos')}>
+            <div className="home-card-icon">📋</div>
+            <h2>{i18n.language === 'th' ? 'งานของฉัน' : 'My Tasks'}</h2>
+            <p className="home-card-description">
+              {i18n.language === 'th' ? 'ดูงานบำรุงรักษาที่มอบหมายให้คุณ' : 'View maintenance tasks assigned to you'}
+            </p>
+            <button className="primary home-action-button">
+              {i18n.language === 'th' ? 'ดูงาน' : 'View Tasks'} →
+            </button>
+          </div>
+        )}
+
         <div className="home-card qr-card">
           <div className="home-card-icon">📷</div>
           <h2>{t('scan_qr')}</h2>

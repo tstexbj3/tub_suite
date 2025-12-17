@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import AssetSearch from './pages/AssetSearch'
 import Checklist from './pages/Checklist'
 import VerifyRepair from './pages/VerifyRepair'
+import TodoList from './pages/TodoList'
 
 function App() {
   const { i18n } = useTranslation()
@@ -25,6 +26,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<AssetSearch />} />
+          <Route path="/todos" element={<TodoList />} />
           <Route path="/checklist/:assetName" element={<Checklist />} />
           <Route path="/verify/:repairName" element={<VerifyRepair />} />
         </Routes>

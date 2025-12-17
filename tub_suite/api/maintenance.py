@@ -655,3 +655,181 @@ def get_portal_settings():
             "enable_search_for_all": 0,
             "search_allowed_roles": ["Maintenance Manager", "System Manager", "Administrator"]
         }
+
+
+@frappe.whitelist()
+def get_inspector_todo_list(days_ahead=7):
+    """
+    Get maintenance tasks assigned to current user, categorized by urgency
+    ONLY accessible to users with "Maintenance User" role
+
+    Returns:
+        {
+            "overdue": [...],      # Tasks past due date
+            "due_today": [...],    # Tasks due today
+            "upcoming": [...],     # Tasks due within days_ahead
+            "summary": {
+                "overdue_count": 0,
+                "due_today_count": 0,
+                "upcoming_count": 0,
+                "total": 0
+            }
+        }
+    """
+    from datetime import datetime, timedelta
+
+    # Permission check: ONLY Maintenance User role can access
+    if not frappe.has_permission("Asset Maintenance", "read") or \
+       "Maintenance User" not in frappe.get_roles(frappe.session.user):
+        frappe.throw("Access denied. Only Maintenance Users can view the task list.",
+                    frappe.PermissionError)
+
+    try:
+        current_user = frappe.session.user
+        today = frappe.utils.today()
+        future_date = frappe.utils.add_days(today, int(days_ahead))
+
+        # Get all Asset Maintenance records (including drafts - no docstatus filter)
+        maintenance_list = frappe.get_all("Asset Maintenance",
+            fields=["name", "asset_name", "company", "maintenance_team"]
+        )
+
+        frappe.logger().info(f"Found {len(maintenance_list)} Asset Maintenance records")
+
+        overdue = []
+        due_today = []
+        upcoming = []
+
+        total_tasks_found = 0
+
+        # For each maintenance schedule, get tasks assigned to current user
+        for maintenance in maintenance_list:
+            tasks = frappe.get_all("Asset Maintenance Task",
+                filters={
+                    "parent": maintenance.name,
+                    "assign_to": current_user,
+                    "maintenance_status": ("in", ["Planned", "Overdue"])  # Only active tasks
+                },
+                fields=[
+                    "name", "maintenance_task", "description", "periodicity",
+                    "next_due_date", "assign_to", "maintenance_type", "maintenance_status", "last_completion_date"
+                ]
+            )
+
+            total_tasks_found += len(tasks)
+            if tasks:
+                frappe.logger().info(f"  {maintenance.name}: {len(tasks)} tasks assigned to {current_user}")
+
+            for task in tasks:
+                # Enrich with asset details
+                asset = frappe.get_doc("Asset", maintenance.asset_name)
+
+                task_data = {
+                    "name": task.name,
+                    "asset_name": maintenance.asset_name,
+                    "asset_title": asset.asset_name or asset.item_name,
+                    "location": asset.location or "",
+                    "maintenance_task": task.maintenance_task,
+                    "description": task.description or "",
+                    "periodicity": task.periodicity,
+                    "next_due_date": task.next_due_date,
+                    "maintenance_type": task.maintenance_type,
+                    "last_completion_date": task.last_completion_date
+                }
+
+                # Calculate days overdue/until due
+                if task.next_due_date:
+                    due_date = frappe.utils.getdate(task.next_due_date)
+                    today_date = frappe.utils.getdate(today)
+                    days_diff = (due_date - today_date).days
+
+                    task_data["days_overdue"] = -days_diff if days_diff < 0 else 0
+
+                    if days_diff < 0:
+                        # Overdue
+                        overdue.append(task_data)
+                    elif days_diff == 0:
+                        # Due today
+                        due_today.append(task_data)
+                    elif days_diff <= int(days_ahead):
+                        # Upcoming
+                        upcoming.append(task_data)
+
+        # Sort by due date
+        overdue.sort(key=lambda x: x.get("next_due_date") or "")
+        due_today.sort(key=lambda x: x.get("maintenance_task") or "")
+        upcoming.sort(key=lambda x: x.get("next_due_date") or "")
+
+        frappe.logger().info(f"Total tasks found for {current_user}: {total_tasks_found}")
+        frappe.logger().info(f"Categorized: Overdue={len(overdue)}, Due Today={len(due_today)}, Upcoming={len(upcoming)}")
+        frappe.logger().info(f"=== END TODO LIST DEBUG ===")
+
+        return {
+            "overdue": overdue,
+            "due_today": due_today,
+            "upcoming": upcoming,
+            "summary": {
+                "overdue_count": len(overdue),
+                "due_today_count": len(due_today),
+                "upcoming_count": len(upcoming),
+                "total": len(overdue) + len(due_today) + len(upcoming)
+            }
+        }
+
+    except Exception as e:
+        frappe.logger().error(f"Error fetching inspector todo list: {str(e)}")
+        return {
+            "overdue": [],
+            "due_today": [],
+            "upcoming": [],
+            "summary": {
+                "overdue_count": 0,
+                "due_today_count": 0,
+                "upcoming_count": 0,
+                "total": 0
+            }
+        }
+
+
+@frappe.whitelist()
+def debug_todo_data():
+    """Debug endpoint to check Asset Maintenance data"""
+    current_user = frappe.session.user
+
+    # Get ALL Asset Maintenance records (no filters)
+    all_maintenance = frappe.get_all("Asset Maintenance",
+        fields=["name", "asset_name", "docstatus"],
+        limit=20
+    )
+
+    # Get all tasks
+    all_tasks = frappe.get_all("Asset Maintenance Task",
+        fields=["name", "parent", "maintenance_task", "assign_to", "next_due_date", "maintenance_status"],
+        limit=50
+    )
+
+    # Get filtered maintenance (what the todo list uses)
+    filtered_maintenance = frappe.get_all("Asset Maintenance",
+        filters={
+            "docstatus": 1
+        },
+        fields=["name", "asset_name", "docstatus"]
+    )
+
+    # Get tasks assigned to current user
+    my_tasks = frappe.get_all("Asset Maintenance Task",
+        filters={"assign_to": current_user},
+        fields=["name", "parent", "maintenance_task", "assign_to", "next_due_date"]
+    )
+
+    return {
+        "current_user": current_user,
+        "all_maintenance_count": len(all_maintenance),
+        "all_maintenance_sample": all_maintenance,
+        "all_tasks_count": len(all_tasks),
+        "all_tasks_sample": all_tasks[:10],
+        "filtered_maintenance_count": len(filtered_maintenance),
+        "filtered_maintenance": filtered_maintenance,
+        "my_tasks_count": len(my_tasks),
+        "my_tasks": my_tasks
+    }
