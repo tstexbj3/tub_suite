@@ -1243,3 +1243,171 @@ button.primary:disabled:hover {
     align-self: flex-start;
   }
 }
+
+/* ============================================
+   QR SCANNER STYLES
+   ============================================ */
+
+.qr-scanner-container {
+  width: 100%;
+}
+
+.scanner-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  display: none;
+}
+
+.scanner-viewport.active {
+  display: block;
+}
+
+#qr-reader {
+  width: 100%;
+  min-height: 300px;
+  background: #000;
+}
+
+#qr-reader video {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 300px;
+  object-fit: cover;
+}
+
+/* Hide the default html5-qrcode UI elements */
+#qr-reader__scan_region {
+  min-height: 300px !important;
+}
+
+#qr-reader__dashboard {
+  display: none !important;
+}
+
+#qr-reader img {
+  display: none !important;
+}
+
+/* Scanner overlay */
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Corner markers */
+.corner {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-color: #00ff88;
+  border-style: solid;
+  border-width: 0;
+}
+
+.corner.top-left {
+  top: 40px;
+  left: 40px;
+  border-top-width: 4px;
+  border-left-width: 4px;
+  border-top-left-radius: 12px;
+}
+
+.corner.top-right {
+  top: 40px;
+  right: 40px;
+  border-top-width: 4px;
+  border-right-width: 4px;
+  border-top-right-radius: 12px;
+}
+
+.corner.bottom-left {
+  bottom: 60px;
+  left: 40px;
+  border-bottom-width: 4px;
+  border-left-width: 4px;
+  border-bottom-left-radius: 12px;
+}
+
+.corner.bottom-right {
+  bottom: 60px;
+  right: 40px;
+  border-bottom-width: 4px;
+  border-right-width: 4px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Scanning line animation */
+.scan-line {
+  position: absolute;
+  left: 50px;
+  right: 50px;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    #00ff88 20%,
+    #00ff88 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 15px #00ff88, 0 0 30px #00ff88;
+  animation: scan 2s ease-in-out infinite;
+  top: 50px;
+}
+
+@keyframes scan {
+  0%, 100% {
+    top: 50px;
+    opacity: 1;
+  }
+  50% {
+    top: calc(100% - 70px);
+    opacity: 0.8;
+  }
+}
+
+/* Scan hint text */
+.scan-hint {
+  position: absolute;
+  bottom: 15px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: white;
+  font-size: 0.85rem;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.5);
+  padding: 8px;
+  backdrop-filter: blur(4px);
+}
+
+/* Stop scanner button */
+.stop-scanner-btn {
+  width: 100%;
+  max-width: 400px;
+  margin: 1rem auto 0;
+  display: block;
+  padding: 1rem;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.stop-scanner-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
+}
