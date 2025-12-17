@@ -55,6 +55,4 @@ doc_events = {
 
 # DocType JavaScript
 # ------------------
-doctype_js = {
-    "Asset": "public/js/asset.js"
-}
+# doctype_js = {}  # Removed - QR generation now handled by qr_foundry app

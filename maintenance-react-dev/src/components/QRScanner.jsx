@@ -8,68 +8,83 @@ export default function QRScanner({ onScan }) {
   const scannerRef = useRef(null)
   const hasScannedRef = useRef(false)
 
+  // Try different scanner configurations in order of preference
   const startScanning = async () => {
-    try {
-      setError(null)
-      setStatus('Initializing camera...')
-      hasScannedRef.current = false
+    setError(null)
+    setStatus('Initializing camera...')
+    hasScannedRef.current = false
 
-      const scanner = new Html5Qrcode("qr-reader", {
-        verbose: false,
-        // Use experimental features for better detection
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true  // Use native BarcodeDetector API if available (faster!)
+    const onScanSuccess = async (decodedText, scanner) => {
+      if (hasScannedRef.current) return
+      hasScannedRef.current = true
+
+      const assetName = extractAssetName(decodedText)
+      if (assetName) {
+        setStatus('QR Code detected!')
+        try {
+          await scanner.stop()
+        } catch (e) {
+          // Ignore stop errors
         }
-      })
-      scannerRef.current = scanner
+        setScanning(false)
+        scannerRef.current = null
+        setTimeout(() => onScan(assetName), 100)
+      }
+    }
 
-      // Try to get high-resolution camera for better scanning
-      const config = {
-        fps: 15,
-        qrbox: 250,
-        // Request higher resolution if available
-        videoConstraints: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+    // Configuration attempts in order of preference
+    const configs = [
+      // Config 1: Simple and reliable
+      {
+        scannerOpts: {},
+        config: { fps: 10, qrbox: { width: 250, height: 250 } }
+      },
+      // Config 2: With experimental features
+      {
+        scannerOpts: {
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+        },
+        config: { fps: 10, qrbox: { width: 250, height: 250 } }
+      },
+      // Config 3: Higher FPS
+      {
+        scannerOpts: {},
+        config: { fps: 15, qrbox: 250 }
+      }
+    ]
+
+    for (let i = 0; i < configs.length; i++) {
+      try {
+        const { scannerOpts, config } = configs[i]
+        const scanner = new Html5Qrcode("qr-reader", scannerOpts)
+        scannerRef.current = scanner
+
+        await scanner.start(
+          { facingMode: "environment" },
+          config,
+          (decodedText) => onScanSuccess(decodedText, scanner)
+        )
+
+        setScanning(true)
+        setStatus('Scanning...')
+        return // Success - exit the loop
+      } catch (err) {
+        console.warn(`Scanner config ${i + 1} failed:`, err.message)
+        // Clean up failed scanner
+        if (scannerRef.current) {
+          try {
+            await scannerRef.current.stop()
+          } catch (e) {
+            // Ignore
+          }
+          scannerRef.current = null
         }
       }
-
-      await scanner.start(
-        { facingMode: "environment" },
-        config,
-        async (decodedText) => {
-          // Prevent multiple scans
-          if (hasScannedRef.current) return
-          hasScannedRef.current = true
-
-          const assetName = extractAssetName(decodedText)
-          if (assetName) {
-            setStatus('QR Code detected!')
-
-            // Stop scanner first, then navigate
-            try {
-              await scanner.stop()
-            } catch (e) {
-              console.log('Scanner stop error (ignored):', e)
-            }
-            setScanning(false)
-            scannerRef.current = null
-
-            // Small delay to ensure cleanup before navigation
-            setTimeout(() => {
-              onScan(assetName)
-            }, 100)
-          }
-        }
-      )
-      setScanning(true)
-      setStatus('Scanning...')
-    } catch (err) {
-      setError('Camera not available. Please use Search instead.')
-      setStatus('')
-      console.error('QR Scanner error:', err)
     }
+
+    // All configs failed
+    setError('Camera not available. Please use Search instead.')
+    setStatus('')
   }
 
   const stopScanning = () => {
@@ -88,8 +103,23 @@ export default function QRScanner({ onScan }) {
   }, [])
 
   const extractAssetName = (url) => {
-    const match = url.match(/asset[=/]([^&\/]+)/)
-    return match ? match[1] : url
+    // Pattern priority (most specific first):
+    // 1. /maintenance/checklist/{name} - qr_foundry redirect URL
+    // 2. /checklist/{name} - direct checklist URL
+    // 3. ?asset={name} or /asset/{name} - legacy patterns
+    // 4. /app/asset/{name} - Frappe desk URL
+    // 5. Plain text - treat as asset name directly
+
+    let match = url.match(/\/(?:maintenance\/)?checklist\/([^?\/]+)/)
+    if (match) return decodeURIComponent(match[1])
+
+    match = url.match(/asset[=/]([^&\/]+)/)
+    if (match) return decodeURIComponent(match[1])
+
+    match = url.match(/\/app\/asset\/([^?\/]+)/)
+    if (match) return decodeURIComponent(match[1])
+
+    return url
   }
 
   return (
