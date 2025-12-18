@@ -88,9 +88,10 @@ class CustomAssetRepair(AssetRepair):
                 update_asset_status_on_approval(self)
                 notify_engineer_on_approval(self)
 
-            # Rejected → Notify engineer
+            # Rejected → Update maintenance log + Notify engineer
             elif new_workflow == "Rejected":
-                print(f"   ❌ Rejected - notifying engineer")
+                print(f"   ❌ Rejected - updating maintenance log + notifying engineer")
+                update_maintenance_log_on_rejection(self)
                 notify_engineer_on_rejection(self)
 
             # Finished → Auto-fill completion date + Notify reporter
@@ -272,7 +273,8 @@ def before_save_asset_repair(doc, method):
                         notify_engineer_on_approval(doc)
 
                     elif new_workflow == "Rejected":
-                        print(f"   ❌ Rejected - notifying engineer")
+                        print(f"   ❌ Rejected - updating maintenance log + notifying engineer")
+                        update_maintenance_log_on_rejection(doc)
                         notify_engineer_on_rejection(doc)
 
                     elif new_workflow == "Finished":
@@ -323,9 +325,10 @@ def on_update_after_submit_asset_repair(doc, method):
             update_asset_status_on_approval(doc)
             notify_engineer_on_approval(doc)
 
-        # Rejected → Notify engineer
+        # Rejected → Update maintenance log + Notify engineer
         elif new_workflow == "Rejected":
-            print(f"   ❌ Rejected - notifying engineer")
+            print(f"   ❌ Rejected - updating maintenance log + notifying engineer")
+            update_maintenance_log_on_rejection(doc)
             notify_engineer_on_rejection(doc)
 
         # Finished → Restore asset + notify reporter
@@ -493,6 +496,56 @@ def restore_asset_status_on_finish(doc):
     else:
         print(f"   ⚠️  Asset stays Out of Order - {other_major_repairs} major repair(s) still open")
         frappe.logger().info(f"Asset {doc.asset} remains Out of Order - {other_major_repairs} major repair(s) still open")
+
+
+def update_maintenance_log_on_rejection(doc):
+    """
+    Update Asset Maintenance Log when repair is rejected
+
+    When manager rejects a repair, it means the issue was invalid/false alarm
+    Update the corresponding maintenance log from "Planned" to "Completed"
+    """
+    print(f"\n🔄 UPDATE_MAINTENANCE_LOG_ON_REJECTION:")
+    print(f"   Repair: {doc.name}")
+    print(f"   Maintenance Task: {doc.get('maintenance_task')}")
+
+    if not doc.get("maintenance_task"):
+        print(f"   ⚠️  No maintenance_task linked to this repair, skipping log update")
+        return
+
+    # Find the maintenance log created when this issue was reported
+    # Match by: asset + task name + status "Planned" + created around same time as repair
+    logs = frappe.get_all("Asset Maintenance Log",
+        filters={
+            "asset_name": doc.asset,
+            "maintenance_status": "Planned"
+        },
+        fields=["name", "task", "task_name", "creation"],
+        order_by="creation desc",
+        limit=10
+    )
+
+    # Find log that matches this repair's task
+    matching_log = None
+    for log in logs:
+        task_field = log.get("task") or log.get("task_name") or ""
+        if doc.get("maintenance_task") in task_field or task_field in doc.get("maintenance_task", ""):
+            # Found matching log
+            matching_log = log
+            break
+
+    if not matching_log:
+        print(f"   ⚠️  No matching maintenance log found with status 'Planned'")
+        return
+
+    # Update log to "Completed" (issue was false alarm/rejected)
+    print(f"   📝 Updating log {matching_log['name']} from Planned → Completed")
+    frappe.db.set_value("Asset Maintenance Log", matching_log["name"], {
+        "maintenance_status": "Completed",
+        "completion_date": frappe.utils.nowdate()
+    })
+    frappe.db.commit()
+    print(f"   ✅ Maintenance log updated successfully")
 
 
 def notify_engineer_on_new_issue(doc):
