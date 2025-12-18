@@ -41,7 +41,15 @@ class CustomAssetRepair(AssetRepair):
         pass
 
     def before_save(self):
-        """Auto-fill approval timestamp - NO super() call"""
+        """Auto-fill approval timestamp + Store old workflow state for transition detection"""
+        # Store current workflow state BEFORE save for transition detection
+        if not self.is_new():
+            old_doc = frappe.db.get_value("Asset Repair", self.name,
+                ["workflow_state", "verification_status"], as_dict=True)
+            if old_doc:
+                self._old_workflow_state = old_doc.get("workflow_state")
+                self._old_verification_status = old_doc.get("verification_status")
+
         before_save_asset_repair(self, None)
 
     def before_submit(self):
@@ -53,34 +61,54 @@ class CustomAssetRepair(AssetRepair):
         """Handle workflow transitions after submit - CRITICAL for asset status management"""
         # Note: Parent class may not have this method, so we don't call super()
 
-        # Check if workflow state or verification changed
-        if not self.is_new():
-            old_doc = frappe.db.get_value("Asset Repair", self.name,
-                ["workflow_state", "verification_status"], as_dict=True)
+        # Get old workflow state stored in before_save()
+        old_workflow = getattr(self, '_old_workflow_state', None)
+        old_verification = getattr(self, '_old_verification_status', None)
 
-            if old_doc:
-                old_workflow = old_doc.get("workflow_state")
-                new_workflow = self.get("workflow_state")
-                old_verification = old_doc.get("verification_status")
-                new_verification = self.get("verification_status")
+        new_workflow = self.get("workflow_state")
+        new_verification = self.get("verification_status")
 
-                # Handle Approved → Set asset Out of Order (if Major)
-                if old_workflow != new_workflow and new_workflow == "Approved":
-                    update_asset_status_on_approval(self)
+        print(f"\n🔄 ON_UPDATE_AFTER_SUBMIT:")
+        print(f"   Doc: {self.name}")
+        print(f"   Old workflow: {old_workflow}")
+        print(f"   New workflow: {new_workflow}")
 
-                # Handle Job Finished → Auto-fill completion date + Notify reporter
-                if old_workflow != new_workflow and new_workflow == "Finished":
-                    # Set completion date when engineer finishes job
-                    if not self.get("completion_date"):
-                        frappe.db.set_value("Asset Repair", self.name, "completion_date", frappe.utils.now())
-                        frappe.db.set_value("Asset Repair", self.name, "repair_status", "Completed")
-                        frappe.db.commit()
-                    notify_reporter_to_verify(self)
+        # Handle workflow state transitions
+        if old_workflow != new_workflow and new_workflow:
+            print(f"   🔄 WORKFLOW TRANSITION DETECTED: {old_workflow} → {new_workflow}")
 
-                # Handle Inspector Verification → Restore asset to Submitted
-                # This happens when original reporter verifies after engineer finishes
-                if old_verification != new_verification and new_verification == "Verified - Passed":
-                    restore_asset_status_on_verification(self)
+            # Pending Approval → Notify managers
+            if new_workflow == "Pending Approval":
+                print(f"   📧 Notifying managers...")
+                notify_manager_on_submit(self)
+
+            # Approved → Update asset status + Notify engineer
+            elif new_workflow == "Approved":
+                print(f"   ✅ Approved - updating asset + notifying engineer")
+                update_asset_status_on_approval(self)
+                notify_engineer_on_approval(self)
+
+            # Rejected → Notify engineer
+            elif new_workflow == "Rejected":
+                print(f"   ❌ Rejected - notifying engineer")
+                notify_engineer_on_rejection(self)
+
+            # Finished → Auto-fill completion date + Notify reporter
+            elif new_workflow == "Finished":
+                print(f"   ✅ Finished - setting completion date + notifying reporter")
+                # Set completion date when engineer finishes job
+                if not self.get("completion_date"):
+                    frappe.db.set_value("Asset Repair", self.name, "completion_date", frappe.utils.now())
+                    frappe.db.set_value("Asset Repair", self.name, "repair_status", "Completed")
+                    frappe.db.commit()
+                notify_reporter_to_verify(self)
+        else:
+            print(f"   ⏭️  No workflow change detected")
+
+        # Handle Inspector Verification → Restore asset to Submitted
+        # This happens when original reporter verifies after engineer finishes
+        if old_verification != new_verification and new_verification == "Verified - Passed":
+            restore_asset_status_on_verification(self)
 
 
 # Event Functions (also called by doc_events hooks)
@@ -104,10 +132,12 @@ def validate_asset_repair(doc, method):
     is_inspector = any(role in user_roles for role in inspector_roles)
     is_engineer = any(role in user_roles for role in engineer_roles)
 
-    # Allow free editing in Draft state ONLY for engineers and managers
+    # Allow free editing ONLY in Draft state for engineers and managers
     if not workflow_state or workflow_state == "Draft":
         # Maintenance Users should NOT access ERPNext desk at all
         # They only use mobile portal
+        # Engineers can only edit in Draft state
+        # Rejected repairs require creating NEW repair document
         return
 
     # After Draft: Lock ALL fields for engineers
@@ -199,13 +229,51 @@ def before_save_asset_repair(doc, method):
                 doc.approval_timestamp = now()
 
             # Handle asset status change when workflow changes
-            workflow_changed = str(old_doc.get("workflow_state") or "") != str(doc.get("workflow_state") or "")
+            old_workflow = old_doc.get("workflow_state")
+            new_workflow = doc.get("workflow_state")
+            workflow_changed = str(old_workflow or "") != str(new_workflow or "")
 
             if workflow_changed:
-                if doc.get("workflow_state") == "Approved":
-                    update_asset_status_on_approval(doc)
-                elif doc.get("workflow_state") == "Finished":
-                    restore_asset_status_on_finish(doc)
+                # Validate manager signature for approval/rejection
+                if new_workflow in ["Approved", "Rejected"] and old_workflow == "Pending Approval":
+                    if not doc.get("approval_signature"):
+                        frappe.throw(_("Manager Signature is required for approval or rejection"), frappe.MandatoryError)
+                    if not doc.get("approval_notes"):
+                        frappe.throw(_("Approval Notes are required for approval or rejection"), frappe.MandatoryError)
+
+                # Prevent duplicate notifications if before_save is called multiple times
+                notification_key = f"notified_{doc.name}_{old_workflow}_to_{new_workflow}"
+
+                if not frappe.flags.get(notification_key):
+                    print(f"\n🔄 WORKFLOW CHANGE DETECTED IN BEFORE_SAVE:")
+                    print(f"   {old_workflow} → {new_workflow}")
+
+                    if new_workflow == "Pending Approval":
+                        print(f"   📧 Notifying managers...")
+                        # Track who submitted for approval (engineer) in cache
+                        engineer_submitter = doc.get("modified_by") or frappe.session.user
+                        frappe.cache().set_value(f"engineer_submitter_{doc.name}", engineer_submitter, expires_in_sec=86400)
+                        print(f"   📝 Stored engineer submitter in cache: {engineer_submitter}")
+                        notify_manager_on_submit(doc)
+
+                    elif new_workflow == "Approved":
+                        print(f"   ✅ Approved - updating asset + notifying engineer")
+                        update_asset_status_on_approval(doc)
+                        notify_engineer_on_approval(doc)
+
+                    elif new_workflow == "Rejected":
+                        print(f"   ❌ Rejected - notifying engineer")
+                        notify_engineer_on_rejection(doc)
+
+                    elif new_workflow == "Finished":
+                        print(f"   ✅ Finished - restoring asset + notifying reporter")
+                        restore_asset_status_on_finish(doc)
+                        notify_reporter_to_verify(doc)
+
+                    # Set flag to prevent duplicate notifications in same request
+                    frappe.flags[notification_key] = True
+                else:
+                    print(f"   ⏭️  Skipping duplicate notification (already sent)")
 
 
 def before_submit_asset_repair(doc, method):
@@ -215,7 +283,7 @@ def before_submit_asset_repair(doc, method):
 
 
 def on_update_after_submit_asset_repair(doc, method):
-    """Handle workflow transitions after submit (Approved → Finished)"""
+    """Handle workflow transitions after submit - notifications + asset status"""
     # Set flag to bypass validation during workflow transitions
     doc.flags.ignore_validate_update_after_submit = True
 
@@ -223,12 +291,40 @@ def on_update_after_submit_asset_repair(doc, method):
     print(f"   Repair: {doc.name}")
     print(f"   Current workflow_state: {doc.get('workflow_state')}")
 
-    # Check if workflow state is Finished - restore asset
-    if doc.get("workflow_state") == "Finished":
-        print(f"   ✅ State is Finished - restoring asset")
-        restore_asset_status_on_finish(doc)
+    # Get old workflow state from doc_before_save (cached in memory before DB update)
+    old_workflow = None
+    if hasattr(doc, '_doc_before_save') and doc._doc_before_save:
+        old_workflow = doc._doc_before_save.get('workflow_state')
+
+    new_workflow = doc.get("workflow_state")
+
+    print(f"   Workflow transition: {old_workflow} → {new_workflow}")
+
+    # Handle state transitions with notifications
+    if old_workflow != new_workflow:
+        # Pending Approval → Manager needs to review
+        if new_workflow == "Pending Approval":
+            print(f"   📧 Notifying managers...")
+            notify_manager_on_submit(doc)
+
+        # Approved → Notify engineer
+        elif new_workflow == "Approved":
+            print(f"   ✅ Approved - notifying engineer")
+            update_asset_status_on_approval(doc)
+            notify_engineer_on_approval(doc)
+
+        # Rejected → Notify engineer
+        elif new_workflow == "Rejected":
+            print(f"   ❌ Rejected - notifying engineer")
+            notify_engineer_on_rejection(doc)
+
+        # Finished → Restore asset + notify reporter
+        elif new_workflow == "Finished":
+            print(f"   ✅ Finished - restoring asset + notifying reporter")
+            restore_asset_status_on_finish(doc)
+            notify_reporter_to_verify(doc)
     else:
-        print(f"   ⏭️  State is {doc.get('workflow_state')} - no restore")
+        print(f"   ⏭️  No workflow state change - skipping notifications")
 
 
 def update_asset_status_on_approval(doc):
@@ -388,6 +484,266 @@ def restore_asset_status_on_finish(doc):
         print(f"   ⚠️  Asset stays Out of Order - {other_major_repairs} major repair(s) still open")
         frappe.logger().info(f"Asset {doc.asset} remains Out of Order - {other_major_repairs} major repair(s) still open")
 
+
+def notify_engineer_on_new_issue(doc):
+    """Notify ONLY engineers when new issue is reported (NOT managers)"""
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+    reporter = doc.get("reported_by") or "Unknown"
+
+    # Get all users with Engineering Team role
+    engineers = frappe.get_all("Has Role",
+        filters={"role": "Engineering Team", "parenttype": "User"},
+        fields=["parent"],
+        pluck="parent"
+    )
+
+    # Get all manager users to EXCLUDE them
+    managers = frappe.get_all("Has Role",
+        filters={"role": ["in", ["Maintenance Manager", "Quality Manager"]], "parenttype": "User"},
+        fields=["parent"],
+        pluck="parent"
+    )
+
+    # Remove managers from engineer list (managers should NOT get engineer notifications)
+    engineers = list(set(engineers) - set(managers))
+
+    if not engineers:
+        print(f"   ⚠️  No engineers found (excluding managers)")
+        return
+
+    print(f"   👥 Found {len(engineers)} engineer(s) (excluding managers): {engineers}")
+
+    for engineer_email in engineers:
+        # Check if notification already exists for this user and document
+        existing = frappe.db.exists("Notification Log", {
+            "for_user": engineer_email,
+            "document_type": "Asset Repair",
+            "document_name": doc.name,
+            "subject": f"🔧 New Issue Reported: {asset_name}"
+        })
+
+        if existing:
+            print(f"   ⏭️  Notification already exists for {engineer_email}, skipping")
+            continue
+
+        notification = frappe.new_doc("Notification Log")
+        notification.subject = f"🔧 New Issue Reported: {asset_name}"
+        notification.email_content = f"""
+        <h3>New maintenance issue requires attention</h3>
+        <p><strong>Asset:</strong> {asset_name}</p>
+        <p><strong>Reported By:</strong> {reporter}</p>
+        <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+        <p><strong>Date:</strong> {doc.failure_date}</p>
+        <hr>
+        <p><a href="/app/asset-repair/{doc.name}">View Issue</a></p>
+        """
+        notification.for_user = engineer_email
+        notification.document_type = "Asset Repair"
+        notification.document_name = doc.name
+        notification.type = "Alert"
+        notification.insert(ignore_permissions=True)
+
+    print(f"   📧 New issue notification sent to {len(engineers)} engineer(s)")
+
+
+def notify_manager_on_submit(doc):
+    """Notify managers when engineer submits repair for approval"""
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+    engineer = doc.get("owner") or "Unknown"
+
+    # Get all users with Maintenance Manager role ONLY
+    managers = frappe.get_all("Has Role",
+        filters={"role": "Maintenance Manager", "parenttype": "User"},
+        fields=["parent"],
+        pluck="parent"
+    )
+
+    if not managers:
+        print(f"   ⚠️  No managers found with 'Maintenance Manager' role")
+        return
+
+    managers = list(set(managers))  # Remove duplicates
+    print(f"   👥 Found {len(managers)} Maintenance Manager(s): {managers}")
+
+    notifications_sent = 0
+    for manager_email in managers:
+        print(f"   🔍 Checking notification for: {manager_email}")
+
+        # Check if notification already exists for this user and document
+        existing = frappe.db.exists("Notification Log", {
+            "for_user": manager_email,
+            "document_type": "Asset Repair",
+            "document_name": doc.name,
+            "subject": f"⏳ Repair Approval Needed: {asset_name}"
+        })
+
+        if existing:
+            print(f"   ⏭️  Notification already exists for {manager_email} (ID: {existing}), skipping")
+            continue
+
+        print(f"   ✉️  Creating notification for {manager_email}...")
+        notification = frappe.new_doc("Notification Log")
+        notification.subject = f"⏳ Repair Approval Needed: {asset_name}"
+        notification.email_content = f"""
+        <h3>New repair request awaiting approval</h3>
+        <p><strong>Asset:</strong> {asset_name}</p>
+        <p><strong>Submitted By:</strong> {engineer}</p>
+        <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+        <p><strong>Severity:</strong> {doc.get("issue_severity") or "Not specified"}</p>
+        <hr>
+        <p><a href="/app/asset-repair/{doc.name}">Review Request</a></p>
+        """
+        notification.for_user = manager_email
+        notification.document_type = "Asset Repair"
+        notification.document_name = doc.name
+        notification.type = "Alert"
+        notification.insert(ignore_permissions=True)
+        notifications_sent += 1
+        print(f"   ✅ Notification created: {notification.name}")
+
+    print(f"   📧 Sent {notifications_sent} new notifications to managers")
+
+
+def notify_engineer_on_approval(doc):
+    """Notify engineer when manager approves repair
+
+    Engineer = the person who submitted for approval (stored in _engineer_submitter field)
+    NOT the document owner (who is the inspector who reported the issue)
+    """
+    # Get the engineer who submitted this for approval (stored in cache when workflow changed to Pending Approval)
+    engineer_email = frappe.cache().get_value(f"engineer_submitter_{doc.name}")
+
+    if not engineer_email:
+        print(f"   ⚠️  No engineer_submitter found in cache for repair {doc.name}, trying fallback")
+        # Fallback: Try to use owner if it's an engineer
+        engineer_email = doc.get("owner")
+
+        if not engineer_email or engineer_email == doc.get("reported_by"):
+            # Get any user with Engineering Team role (excluding managers)
+            engineers = frappe.get_all("Has Role",
+                filters={"role": "Engineering Team", "parenttype": "User"},
+                fields=["parent"],
+                pluck="parent"
+            )
+            managers = frappe.get_all("Has Role",
+                filters={"role": ["in", ["Maintenance Manager", "Quality Manager"]], "parenttype": "User"},
+                fields=["parent"],
+                pluck="parent"
+            )
+            engineers = list(set(engineers) - set(managers))
+
+            if engineers:
+                engineer_email = engineers[0]  # Pick first engineer as fallback
+                print(f"   📧 Using fallback engineer: {engineer_email}")
+            else:
+                print(f"   ⚠️  No engineers found to notify")
+                return
+    else:
+        print(f"   📧 Retrieved engineer submitter: {engineer_email}")
+
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+
+    # Check if notification already exists
+    existing = frappe.db.exists("Notification Log", {
+        "for_user": engineer_email,
+        "document_type": "Asset Repair",
+        "document_name": doc.name,
+        "subject": f"✅ Repair APPROVED: {asset_name}"
+    })
+
+    if existing:
+        print(f"   ⏭️  Approval notification already exists for {engineer_email}, skipping")
+        return
+
+    notification = frappe.new_doc("Notification Log")
+    notification.subject = f"✅ Repair APPROVED: {asset_name}"
+    notification.email_content = f"""
+    <h3 style="color: green;">Your repair request has been approved</h3>
+    <p><strong>Asset:</strong> {asset_name}</p>
+    <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+    <p><strong>Manager's Notes:</strong> {doc.get("approval_notes") or "No notes"}</p>
+    <hr>
+    <p>Please proceed with the repair. Mark as "Finished" when complete.</p>
+    <p><a href="/app/asset-repair/{doc.name}">Open Repair</a></p>
+    """
+    notification.for_user = engineer_email
+    notification.document_type = "Asset Repair"
+    notification.document_name = doc.name
+    notification.type = "Alert"
+    notification.insert(ignore_permissions=True)
+
+    print(f"   📧 Approval notification sent to {engineer_email}")
+
+
+def notify_engineer_on_rejection(doc):
+    """Notify engineer when manager rejects repair
+
+    Engineer = the person who submitted for approval (stored in _engineer_submitter field)
+    NOT the document owner (who is the inspector who reported the issue)
+    """
+    # Get the engineer who submitted this for approval (stored in cache when workflow changed to Pending Approval)
+    engineer_email = frappe.cache().get_value(f"engineer_submitter_{doc.name}")
+
+    if not engineer_email:
+        print(f"   ⚠️  No engineer_submitter found in cache for repair {doc.name}, trying fallback")
+        # Fallback: Try to use owner if it's an engineer
+        engineer_email = doc.get("owner")
+
+        if not engineer_email or engineer_email == doc.get("reported_by"):
+            # Get any user with Engineering Team role (excluding managers)
+            engineers = frappe.get_all("Has Role",
+                filters={"role": "Engineering Team", "parenttype": "User"},
+                fields=["parent"],
+                pluck="parent"
+            )
+            managers = frappe.get_all("Has Role",
+                filters={"role": ["in", ["Maintenance Manager", "Quality Manager"]], "parenttype": "User"},
+                fields=["parent"],
+                pluck="parent"
+            )
+            engineers = list(set(engineers) - set(managers))
+
+            if engineers:
+                engineer_email = engineers[0]  # Pick first engineer as fallback
+                print(f"   📧 Using fallback engineer: {engineer_email}")
+            else:
+                print(f"   ⚠️  No engineers found to notify")
+                return
+    else:
+        print(f"   📧 Retrieved engineer submitter: {engineer_email}")
+
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+
+    # Check if notification already exists
+    existing = frappe.db.exists("Notification Log", {
+        "for_user": engineer_email,
+        "document_type": "Asset Repair",
+        "document_name": doc.name,
+        "subject": f"❌ Repair REJECTED: {asset_name}"
+    })
+
+    if existing:
+        print(f"   ⏭️  Rejection notification already exists for {engineer_email}, skipping")
+        return
+
+    notification = frappe.new_doc("Notification Log")
+    notification.subject = f"❌ Repair REJECTED: {asset_name}"
+    notification.email_content = f"""
+    <h3 style="color: red;">Your repair request has been rejected</h3>
+    <p><strong>Asset:</strong> {asset_name}</p>
+    <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+    <p><strong>Manager's Reason:</strong> {doc.get("approval_notes") or "No reason provided"}</p>
+    <hr>
+    <p>Please review and resubmit if necessary.</p>
+    <p><a href="/app/asset-repair/{doc.name}">Open Repair</a></p>
+    """
+    notification.for_user = engineer_email
+    notification.document_type = "Asset Repair"
+    notification.document_name = doc.name
+    notification.type = "Alert"
+    notification.insert(ignore_permissions=True)
+
+    print(f"   📧 Rejection notification sent to {engineer_email}")
 
 
 def notify_reporter_to_verify(doc):

@@ -123,22 +123,30 @@ export default function Checklist() {
         ) : (
           <div className="task-list">
             {tasks.map(task => {
-              // Check if task was completed today
+              // Check if task was completed today or has a pending repair
               const today = new Date().toISOString().split('T')[0]
               const lastCompleted = task.last_completion_date
               const completedToday = lastCompleted === today
               const hasOpenIssue = task.has_open_issue === 1
+              const hasPendingRepair = task.pending_repair === 1
+
+              // Lock task if: completed today OR has pending repair
+              const isLocked = completedToday || hasPendingRepair
 
               return (
                 <div
                   key={task.name}
-                  className={`task-card ${completedToday ? 'task-completed-today' : ''}`}
-                  onClick={() => !completedToday && setSelectedTask(task)}
-                  style={{ cursor: completedToday ? 'not-allowed' : 'pointer', opacity: completedToday ? 0.6 : 1 }}
+                  className={`task-card ${isLocked ? 'task-completed-today' : ''}`}
+                  onClick={() => !isLocked && setSelectedTask(task)}
+                  style={{ cursor: isLocked ? 'not-allowed' : 'pointer', opacity: isLocked ? 0.6 : 1 }}
                 >
                   <div className="task-card-header">
                     <h3>{task.maintenance_task || task.task_name || 'Unnamed Task'}</h3>
-                    {completedToday && hasOpenIssue ? (
+                    {hasPendingRepair && !completedToday ? (
+                      <span className="status-badge" style={{ background: '#2196F3', color: 'white' }}>
+                        🔧 Repair In Progress
+                      </span>
+                    ) : completedToday && hasOpenIssue ? (
                       <span className="status-badge" style={{ background: '#FF9800', color: 'white' }}>
                         ⚠ Issue Reported
                       </span>
