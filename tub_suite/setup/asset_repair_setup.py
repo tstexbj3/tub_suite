@@ -159,12 +159,16 @@ frappe.ui.form.on('Asset Repair', {
         }
 
         // ENGINEER FIELD LOCKING
-        if (is_engineer) {
-            // Hide approval section for engineers
+        if (is_engineer && !is_manager) {
+            // CRITICAL: Hide AND lock approval section for engineers
+            // Engineers should NEVER see or edit manager approval fields
             frm.set_df_property('approval_section', 'hidden', 1);
             frm.set_df_property('approval_notes', 'hidden', 1);
+            frm.set_df_property('approval_notes', 'read_only', 1);
             frm.set_df_property('approval_signature', 'hidden', 1);
+            frm.set_df_property('approval_signature', 'read_only', 1);
             frm.set_df_property('approval_timestamp', 'hidden', 1);
+            frm.set_df_property('approval_timestamp', 'read_only', 1);
 
             // After submitting for approval, lock ALL engineer fields
             if (workflow_state !== 'Draft') {

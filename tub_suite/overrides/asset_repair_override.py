@@ -149,6 +149,16 @@ def validate_asset_repair(doc, method):
                 # Check if any field changed (except system fields)
                 ignored_fields = ["_user_tags", "_comments", "_assign", "_liked_by", "modified", "modified_by",
                                  "docstatus", "workflow_state", "repair_status", "completion_date"]
+
+                # CRITICAL: Block engineers from editing manager approval fields
+                manager_approval_fields = ["approval_notes", "approval_signature", "approval_timestamp"]
+                for field in manager_approval_fields:
+                    if doc.get(field) != old_doc.get(field):
+                        frappe.throw(
+                            _("Engineers cannot edit Manager Approval fields. This is restricted to Maintenance Managers only."),
+                            frappe.PermissionError
+                        )
+
                 meta = frappe.get_meta("Asset Repair")
                 for field in meta.fields:
                     if field.fieldname in ignored_fields:
