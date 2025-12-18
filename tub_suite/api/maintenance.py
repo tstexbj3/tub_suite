@@ -113,7 +113,7 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
         repair = frappe.get_doc({
             "doctype": "Asset Repair",
             "asset": asset_name,
-            "failure_date": frappe.utils.nowdate(),
+            "failure_date": frappe.utils.now(),
             "description": issue_description,
             "repair_status": "Pending",
             "reported_by": frappe.session.user,  # Track who reported
