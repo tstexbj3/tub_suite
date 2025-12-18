@@ -7,18 +7,37 @@ app_license = "mit"
 
 # Fixtures - for easy migration to production
 # ------------
+# These fixtures will be auto-installed when running 'bench migrate'
 fixtures = [
-    {"dt": "Custom Field"},
-    {"dt": "Property Setter"},
+    {
+        "dt": "Custom Field",
+        "filters": [["dt", "in", ["Asset Repair", "Asset", "Asset Maintenance"]]]
+    },
+    {
+        "dt": "Property Setter",
+        "filters": [["doc_type", "in", ["Asset Repair", "Asset", "Asset Maintenance"]]]
+    },
     {"dt": "Workflow"},
     {"dt": "Workflow State"},
     {"dt": "Workflow Action Master"},
-    {"dt": "Role"},
+    {
+        "dt": "Role",
+        "filters": [["name", "in", ["Maintenance Inspector", "Maintenance Engineer"]]]
+    },
     {
         "dt": "DocType",
         "filters": [["name", "in", ["Asset Repair Engineering Detail"]]]
     },
+    {
+        "dt": "Notification",
+        "filters": [["is_standard", "=", 0]]  # Only custom notifications
+    }
 ]
+
+# Export fixtures configuration
+# When you run: bench --site SITE export-fixtures
+# It will use the filters above
+export_fixtures = fixtures
 
 # Scheduled Tasks
 # ---------------
