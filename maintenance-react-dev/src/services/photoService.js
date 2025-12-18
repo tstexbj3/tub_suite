@@ -58,18 +58,6 @@ export const uploadPhoto = async (file, assetName, activityType, sequence) => {
     body: formData
   })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error('Upload failed:', response.status, errorText)
-    throw new Error(`Upload failed (${response.status}): ${errorText}`)
-  }
-
   const data = await response.json()
-
-  if (!data.message || !data.message.file_url) {
-    console.error('Invalid response:', data)
-    throw new Error('Invalid response from server')
-  }
-
   return data.message.file_url
 }

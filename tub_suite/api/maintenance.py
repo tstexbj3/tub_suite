@@ -353,6 +353,20 @@ def get_maintenance_by_asset(asset_name):
                         }, fields=["name", "workflow_state", "repair_status", "maintenance_task"])
 
                         task["has_open_issue"] = 1 if len(open_repairs) > 0 else 0
+
+                        # DEBUG: Print to console to verify new code is running
+                        print(f"\n=== BADGE DEBUG ===")
+                        print(f"Asset: {asset.name}")
+                        print(f"Task: {task.get('maintenance_task')}")
+                        print(f"Last completed: {task.get('last_completion_date')}")
+                        print(f"Today: {today}")
+                        print(f"Open repairs found: {len(open_repairs)}")
+                        for r in open_repairs:
+                            print(f"  - {r.name}: workflow_state={r.workflow_state}")
+                        print(f"Setting has_open_issue = {task['has_open_issue']}")
+                        print(f"===================\n")
+
+                        frappe.logger().info(f"Task {task['name']}: last_completed={task.get('last_completion_date')}, today={today}, open_repairs={len(open_repairs)}, workflow_states={[r.workflow_state for r in open_repairs]}")
                     else:
                         task["has_open_issue"] = 0
 

@@ -391,7 +391,7 @@ npm run build
 # - tub_suite/public/maintenance/
 # - tub_suite/www/maintenance/
 
-# Clear Frappe cachedoe
+# Clear Frappe cache
 bench --site [site-name] clear-cache
 ```
 
