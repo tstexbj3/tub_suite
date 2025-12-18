@@ -44,14 +44,39 @@ class CustomAssetRepair(AssetRepair):
         """Auto-fill approval timestamp - NO super() call"""
         before_save_asset_repair(self, None)
 
+    def after_insert(self):
+        """Notify engineer when inspector reports new issue"""
+        try:
+            super(CustomAssetRepair, self).after_insert()
+        except:
+            pass  # Parent class might not have after_insert
+
+        # Notify engineers about new issue
+        try:
+            notify_engineer_on_new_issue(self)
+        except Exception as e:
+            # Don't block issue creation if notification fails
+            frappe.log_error(f"Failed to notify engineer: {str(e)}", "Engineer Notification Error")
+
     def before_submit(self):
         """Validate engineer signature"""
         super(CustomAssetRepair, self).before_submit()
         before_submit_asset_repair(self, None)
 
+    def on_submit(self):
+        """Notify manager when engineer submits for approval"""
+        super(CustomAssetRepair, self).on_submit()
+
+        # When engineer submits → workflow goes to "Pending Approval"
+        if self.workflow_state == "Pending Approval":
+            notify_manager_on_submit(self)
+
     def on_update_after_submit(self):
         """Handle workflow transitions after submit - CRITICAL for asset status management"""
         # Note: Parent class may not have this method, so we don't call super()
+
+        print(f"\n🔔 ON_UPDATE_AFTER_SUBMIT called for {self.name}")
+        print(f"   Workflow: {self.workflow_state}")
 
         # Check if workflow state or verification changed
         if not self.is_new():
@@ -64,9 +89,18 @@ class CustomAssetRepair(AssetRepair):
                 old_verification = old_doc.get("verification_status")
                 new_verification = self.get("verification_status")
 
-                # Handle Approved → Set asset Out of Order (if Major)
+                print(f"   Old workflow: {old_workflow} → New: {new_workflow}")
+
+                # Handle Approved → Set asset Out of Order (if Major) + Notify engineer
                 if old_workflow != new_workflow and new_workflow == "Approved":
+                    print(f"   ✅ APPROVED - notifying engineer")
                     update_asset_status_on_approval(self)
+                    notify_engineer_on_approval(self)
+
+                # Handle Rejected → Notify engineer
+                if old_workflow != new_workflow and new_workflow == "Rejected":
+                    print(f"   ❌ REJECTED - notifying engineer")
+                    notify_engineer_on_rejection(self)
 
                 # Handle Job Finished → Auto-fill completion date + Notify reporter
                 if old_workflow != new_workflow and new_workflow == "Finished":
@@ -388,6 +422,166 @@ def restore_asset_status_on_finish(doc):
         print(f"   ⚠️  Asset stays Out of Order - {other_major_repairs} major repair(s) still open")
         frappe.logger().info(f"Asset {doc.asset} remains Out of Order - {other_major_repairs} major repair(s) still open")
 
+
+
+def notify_manager_on_submit(doc):
+    """
+    Send notification to managers when engineer submits repair for approval
+    Managers need to review and approve/reject the repair request
+    """
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+    engineer = doc.get("owner") or "Unknown"
+
+    # Get all users with manager roles
+    managers = frappe.get_all("Has Role",
+        filters={"role": ["in", ["Maintenance Manager", "Quality Manager"]], "parenttype": "User"},
+        fields=["parent"],
+        pluck="parent"
+    )
+
+    if not managers:
+        frappe.logger().warning(f"No managers found to notify for repair {doc.name}")
+        return
+
+    # Remove duplicates
+    managers = list(set(managers))
+
+    # Create notification for each manager
+    for manager_email in managers:
+        notification = frappe.new_doc("Notification Log")
+        notification.subject = f"⏳ Repair Approval Needed: {asset_name}"
+        notification.email_content = f"""
+        <h3 style="color: blue;">New repair request awaiting your approval</h3>
+        <p><strong>Asset:</strong> {asset_name} ({doc.asset})</p>
+        <p><strong>Submitted By:</strong> {engineer}</p>
+        <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+        <p><strong>Severity:</strong> {doc.get("issue_severity") or "Not specified"}</p>
+        <p><strong>Failure Date:</strong> {doc.get("failure_date") or "Not specified"}</p>
+        <hr>
+        <p><strong>Action Required:</strong> Please review this repair request and approve or reject it.</p>
+        <p><a href="/app/asset-repair/{doc.name}" style="background: #2196F3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Request</a></p>
+        """
+        notification.for_user = manager_email
+        notification.document_type = "Asset Repair"
+        notification.document_name = doc.name
+        notification.type = "Alert"
+        notification.insert(ignore_permissions=True)
+
+    frappe.logger().info(f"Notified {len(managers)} manager(s) of repair submission {doc.name}")
+    print(f"   📧 Approval request notification sent to {len(managers)} manager(s)")
+
+
+def notify_engineer_on_new_issue(doc):
+    """
+    Send notification to engineering team when inspector reports new issue
+    Engineers need to review the issue and submit for approval
+    """
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+    reporter = doc.get("reported_by") or "Unknown"
+
+    # Get all users with "Engineering Team" role
+    engineers = frappe.get_all("Has Role",
+        filters={"role": "Engineering Team", "parenttype": "User"},
+        fields=["parent"],
+        pluck="parent"
+    )
+
+    if not engineers:
+        frappe.logger().warning(f"No engineers found to notify for repair {doc.name}")
+        return
+
+    # Create notification for each engineer
+    for engineer_email in engineers:
+        notification = frappe.new_doc("Notification Log")
+        notification.subject = f"🔧 New Issue Reported: {asset_name}"
+        notification.email_content = f"""
+        <h3 style="color: orange;">New maintenance issue reported</h3>
+        <p><strong>Asset:</strong> {asset_name} ({doc.asset})</p>
+        <p><strong>Reported By:</strong> {reporter}</p>
+        <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+        <p><strong>Failure Date:</strong> {doc.get("failure_date") or "Not specified"}</p>
+        <hr>
+        <p><strong>Action Required:</strong> Please review this issue in ERPNext. If repair is needed, add details and submit for manager approval.</p>
+        <p><a href="/app/asset-repair/{doc.name}" style="background: #FF9800; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Issue</a></p>
+        """
+        notification.for_user = engineer_email
+        notification.document_type = "Asset Repair"
+        notification.document_name = doc.name
+        notification.type = "Alert"
+        notification.insert(ignore_permissions=True)
+
+    frappe.logger().info(f"Notified {len(engineers)} engineer(s) of new issue {doc.name}")
+    print(f"   📧 New issue notification sent to {len(engineers)} engineer(s)")
+
+
+def notify_engineer_on_approval(doc):
+    """
+    Send notification to engineer when manager approves repair request
+    Engineer can now proceed with the actual repair work
+    """
+    if not doc.get("owner"):
+        return
+
+    engineer_email = doc.get("owner")  # Creator of the repair doc
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+    approval_notes = doc.get("approval_notes") or "No additional notes"
+
+    # Create notification
+    notification = frappe.new_doc("Notification Log")
+    notification.subject = f"✅ Repair Request APPROVED: {asset_name}"
+    notification.email_content = f"""
+    <h3 style="color: green;">Your repair request has been approved</h3>
+    <p><strong>Asset:</strong> {asset_name} ({doc.asset})</p>
+    <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+    <p><strong>Severity:</strong> {doc.get("issue_severity") or "Not specified"}</p>
+    <p><strong>Manager's Notes:</strong> {approval_notes}</p>
+    <hr>
+    <p><strong>Action Required:</strong> Please proceed with the repair work. When finished, mark the job as "Finished" in ERPNext.</p>
+    <p><a href="/app/asset-repair/{doc.name}" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Open Repair Request</a></p>
+    """
+    notification.for_user = engineer_email
+    notification.document_type = "Asset Repair"
+    notification.document_name = doc.name
+    notification.type = "Alert"
+    notification.insert(ignore_permissions=True)
+
+    frappe.logger().info(f"Notified engineer {engineer_email} of approval for repair {doc.name}")
+    print(f"   📧 Approval notification sent to engineer {engineer_email}")
+
+
+def notify_engineer_on_rejection(doc):
+    """
+    Send notification to engineer when manager rejects repair request
+    Engineer needs to review the rejection notes and resubmit if needed
+    """
+    if not doc.get("owner"):
+        return
+
+    engineer_email = doc.get("owner")  # Creator of the repair doc
+    asset_name = frappe.db.get_value("Asset", doc.asset, "asset_name") if doc.asset else "Unknown Asset"
+    approval_notes = doc.get("approval_notes") or "No reason provided"
+
+    # Create notification
+    notification = frappe.new_doc("Notification Log")
+    notification.subject = f"❌ Repair Request REJECTED: {asset_name}"
+    notification.email_content = f"""
+    <h3 style="color: red;">Your repair request has been rejected</h3>
+    <p><strong>Asset:</strong> {asset_name} ({doc.asset})</p>
+    <p><strong>Issue:</strong> {doc.description or "No description"}</p>
+    <p><strong>Severity:</strong> {doc.get("issue_severity") or "Not specified"}</p>
+    <p><strong>Manager's Reason:</strong> {approval_notes}</p>
+    <hr>
+    <p><strong>Action Required:</strong> Please review the manager's notes and resubmit the request if necessary after addressing the concerns.</p>
+    <p><a href="/app/asset-repair/{doc.name}" style="background: #f44336; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">Open Repair Request</a></p>
+    """
+    notification.for_user = engineer_email
+    notification.document_type = "Asset Repair"
+    notification.document_name = doc.name
+    notification.type = "Alert"
+    notification.insert(ignore_permissions=True)
+
+    frappe.logger().info(f"Notified engineer {engineer_email} of rejection for repair {doc.name}")
+    print(f"   📧 Rejection notification sent to engineer {engineer_email}")
 
 
 def notify_reporter_to_verify(doc):

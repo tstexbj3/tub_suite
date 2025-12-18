@@ -13,14 +13,19 @@ export default function PhotoUpload({ photos, setPhotos, activityType, assetName
     const file = e.target.files[0]
     if (!file) return
 
-    // Add timestamp overlay
-    const photoWithTimestamp = await addTimestampToPhoto(file)
+    try {
+      // Add timestamp overlay
+      const photoWithTimestamp = await addTimestampToPhoto(file)
 
-    // Upload to Frappe with structured naming
-    const sequence = photos.length + 1
-    const url = await uploadPhoto(photoWithTimestamp, assetName, activityType, sequence)
+      // Upload to Frappe with structured naming
+      const sequence = photos.length + 1
+      const url = await uploadPhoto(photoWithTimestamp, assetName, activityType, sequence)
 
-    setPhotos([...photos, url])
+      setPhotos([...photos, url])
+    } catch (error) {
+      console.error('Photo upload failed:', error)
+      alert(`Failed to upload photo: ${error.message || 'Unknown error'}`)
+    }
   }
 
   const removePhoto = (index) => {
