@@ -160,18 +160,33 @@ frappe.ui.form.on('Asset Repair', {
 
         // ENGINEER FIELD LOCKING
         if (is_engineer && !is_manager) {
-            // CRITICAL: Hide AND lock approval section for engineers
-            // Engineers should NEVER see or edit manager approval fields
-            frm.set_df_property('approval_section', 'hidden', 1);
-            frm.set_df_property('approval_notes', 'hidden', 1);
-            frm.set_df_property('approval_notes', 'read_only', 1);
-            frm.set_df_property('approval_signature', 'hidden', 1);
-            frm.set_df_property('approval_signature', 'read_only', 1);
-            frm.set_df_property('approval_timestamp', 'hidden', 1);
-            frm.set_df_property('approval_timestamp', 'read_only', 1);
+            // CRITICAL: Engineers should NEVER edit manager approval fields
+            // But they SHOULD see rejection notes when repair is rejected
+
+            if (workflow_state === 'Rejected') {
+                // SHOW manager notes (read-only) so engineer can see rejection reason
+                frm.set_df_property('approval_section', 'hidden', 0);
+                frm.set_df_property('approval_notes', 'hidden', 0);
+                frm.set_df_property('approval_notes', 'read_only', 1);
+                frm.set_df_property('approval_timestamp', 'hidden', 0);
+                frm.set_df_property('approval_timestamp', 'read_only', 1);
+                // Keep signature hidden (not needed for engineer to see)
+                frm.set_df_property('approval_signature', 'hidden', 1);
+                frm.set_df_property('approval_signature', 'read_only', 1);
+            } else {
+                // HIDE approval section in all other states (Draft, Pending, Approved, Finished)
+                frm.set_df_property('approval_section', 'hidden', 1);
+                frm.set_df_property('approval_notes', 'hidden', 1);
+                frm.set_df_property('approval_notes', 'read_only', 1);
+                frm.set_df_property('approval_signature', 'hidden', 1);
+                frm.set_df_property('approval_signature', 'read_only', 1);
+                frm.set_df_property('approval_timestamp', 'hidden', 1);
+                frm.set_df_property('approval_timestamp', 'read_only', 1);
+            }
 
             // After submitting for approval, lock ALL engineer fields
-            if (workflow_state !== 'Draft') {
+            // But allow editing in Rejected state so engineer can fix and resubmit
+            if (workflow_state !== 'Draft' && workflow_state !== 'Rejected') {
                 frm.set_df_property('actions_performed', 'read_only', 1);
                 frm.set_df_property('engineer_signature', 'read_only', 1);
                 frm.set_df_property('issue_severity', 'read_only', 1);
