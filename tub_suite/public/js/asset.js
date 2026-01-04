@@ -39,3 +39,4 @@ function generate_asset_maintenance_qr(frm) {
         }
     });
 }
+

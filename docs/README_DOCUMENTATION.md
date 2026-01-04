@@ -72,6 +72,7 @@
 #### Deployment and Setup
 - **[DEPLOYMENT_GUIDE_v2.1.0.md](DEPLOYMENT_GUIDE_v2.1.0.md)** - Production deployment steps for v2.1.0
 - **[FIXTURE_MANAGEMENT.md](FIXTURE_MANAGEMENT.md)** - Managing custom fields and workflows across environments
+- **[ASSET_QR_PRINTING_GUIDE.md](ASSET_QR_PRINTING_GUIDE.md)** - Print QR labels for assets using Niimbot B1 printer
 
 #### System Architecture
 - **Frontend:** React 19 with QR scanner and camera integration
@@ -88,6 +89,7 @@
 - ✅ Automatic notifications at each workflow stage
 - ✅ Asset status management (Out of Order / In Maintenance)
 - ✅ Inspector verification loop (closed-loop quality assurance)
+- ✅ **NEW: Asset QR label printing** (Niimbot B1 thermal printer support)
 
 ---
 
@@ -103,7 +105,8 @@ tub_suite/docs/
 ├── USER_MANUAL_ADMINISTRATOR.md     ← IT/Admin technical guide
 │
 ├── DEPLOYMENT_GUIDE_v2.1.0.md       ← Production deployment steps
-└── FIXTURE_MANAGEMENT.md            ← Custom field management
+├── FIXTURE_MANAGEMENT.md            ← Custom field management
+└── ASSET_QR_PRINTING_GUIDE.md       ← QR label printing (Niimbot B1)
 ```
 
 ---
@@ -374,6 +377,7 @@ A: See [FIXTURE_MANAGEMENT.md](FIXTURE_MANAGEMENT.md)
 - ⚙️ [Administrator Manual](USER_MANUAL_ADMINISTRATOR.md) - IT technical guide
 - 🚀 [Deployment Guide](DEPLOYMENT_GUIDE_v2.1.0.md) - Production setup
 - 📋 [Fixture Management](FIXTURE_MANAGEMENT.md) - Custom field management
+- 🏷️ [QR Printing Guide](ASSET_QR_PRINTING_GUIDE.md) - Asset label printing (Niimbot B1)
 
 ---
 
