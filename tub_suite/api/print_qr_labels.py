@@ -20,7 +20,7 @@ def batch_print_qr_labels(asset_names):
     Returns:
         dict: {"html": rendered_html}
     """
-    from qr_foundry.print_helpers import qr_src
+    from tub_suite.utils.qr_helpers import get_asset_qr_src
 
     # Parse asset names if JSON string
     if isinstance(asset_names, str):
@@ -40,8 +40,8 @@ def batch_print_qr_labels(asset_names):
         try:
             asset = frappe.get_doc("Asset", asset_name)
 
-            # Generate QR URL using QR Foundry
-            qr_url = qr_src("Asset", asset.name)
+            # Generate QR URL using our custom helper
+            qr_url = get_asset_qr_src(asset.name)
 
             assets.append({
                 "name": asset.name,

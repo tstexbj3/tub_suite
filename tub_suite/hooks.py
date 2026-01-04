@@ -87,3 +87,11 @@ doctype_js = {
 doctype_list_js = {
     "Asset": "public/js/asset_list.js"
 }
+
+# Jinja Filters and Methods
+# --------------------------
+jinja = {
+    "methods": [
+        "tub_suite.utils.qr_helpers.get_asset_qr_src"
+    ]
+}
