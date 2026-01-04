@@ -3,6 +3,9 @@
 
 import frappe
 from frappe.utils import get_url
+import qrcode
+from io import BytesIO
+import base64
 
 
 def get_asset_qr_src(asset_name):
@@ -26,15 +29,30 @@ def get_asset_qr_src(asset_name):
         # Use existing QR List image
         return existing_qr
 
-    # Fallback: Generate QR on-the-fly using QR Foundry
-    # This creates a Manual mode QR pointing directly to maintenance portal
+    # Fallback: Generate QR on-the-fly pointing directly to maintenance portal
     maintenance_url = get_url(f"/maintenance?asset={asset_name}")
 
     try:
-        # Use QR Foundry's generate_qr_manual function if available
-        from qr_foundry.api import generate_qr_manual
-        result = generate_qr_manual(manual_content=maintenance_url, label_text=asset_name)
-        return result.get("data_uri", "")
+        # Generate QR code using qrcode library
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(maintenance_url)
+        qr.make(fit=True)
+
+        # Create image
+        img = qr.make_image(fill_color="black", back_color="white")
+
+        # Convert to base64 data URI
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        data_uri = f"data:image/png;base64,{img_base64}"
+
+        return data_uri
     except Exception as e:
         frappe.log_error(f"QR generation failed for {asset_name}: {str(e)}")
         # Return a placeholder or empty
