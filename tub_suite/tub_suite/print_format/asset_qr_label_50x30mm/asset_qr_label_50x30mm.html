@@ -126,7 +126,7 @@
     <div class="info-section">
         <div class="brand">TUB ASSETS</div>
         <div class="asset-id">{{ doc.name }}</div>
-        <div class="asset-name">{{ doc.asset_name or doc.item_name or '-' }}</div>
+        <div class="asset-name">{% if doc.item_code %}{{ doc.item_code }} | {% endif %}{{ doc.asset_name or doc.item_name or '-' }}</div>
         <div class="location">
             <span class="location-icon">📍</span> {{ doc.location or 'ไม่ระบุสถานที่' }}
         </div>

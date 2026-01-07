@@ -126,7 +126,7 @@
     <div class="info-section">
         <div class="brand">TUB ASSETS</div>
         <div class="asset-id">{{ asset.name }}</div>
-        <div class="asset-name">{{ asset.asset_name }}</div>
+        <div class="asset-name">{% if asset.item_code %}{{ asset.item_code }} | {% endif %}{{ asset.asset_name }}</div>
         <div class="location"><span class="location-icon">📍</span> {{ asset.location }}</div>
     </div>
 </div>

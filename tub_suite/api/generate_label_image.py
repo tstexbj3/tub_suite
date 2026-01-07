@@ -110,15 +110,23 @@ def generate_label_image(asset_name):
     y_pos += 35
 
     # Asset Name (wrap to 2 lines, better Thai handling)
+    # Prepend item_code if available
+    item_code = asset.item_code or ""
     asset_name_text = asset.asset_name or asset.item_name or "-"
+
+    # Format: "ITEM-001 | Asset Name" if item_code exists
+    if item_code:
+        full_text = f"{item_code} | {asset_name_text}"
+    else:
+        full_text = asset_name_text
 
     # For Thai text, count characters not words
     max_chars_per_line = 16  # Increased for Thai characters
 
-    if len(asset_name_text) > max_chars_per_line:
+    if len(full_text) > max_chars_per_line:
         # Split into 2 lines
-        line1 = asset_name_text[:max_chars_per_line]
-        line2 = asset_name_text[max_chars_per_line:max_chars_per_line*2]
+        line1 = full_text[:max_chars_per_line]
+        line2 = full_text[max_chars_per_line:max_chars_per_line*2]
 
         draw.text((text_x, y_pos), line1, font=font_name, fill='#333333')
         y_pos += 30
@@ -126,7 +134,7 @@ def generate_label_image(asset_name):
             draw.text((text_x, y_pos), line2, font=font_name, fill='#333333')
             y_pos += 30
     else:
-        draw.text((text_x, y_pos), asset_name_text, font=font_name, fill='#333333')
+        draw.text((text_x, y_pos), full_text, font=font_name, fill='#333333')
         y_pos += 35
 
     # Location (remove emoji, use text icon instead)

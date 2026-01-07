@@ -45,6 +45,7 @@ def batch_print_qr_labels(asset_names):
 
             assets.append({
                 "name": asset.name,
+                "item_code": asset.item_code,
                 "asset_name": asset.asset_name or asset.item_name or "-",
                 "location": asset.location or "ไม่ระบุสถานที่",
                 "qr_url": qr_url
