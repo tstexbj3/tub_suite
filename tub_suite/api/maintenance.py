@@ -197,6 +197,89 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
     }
 
 @frappe.whitelist()
+def create_operator_repair_request(asset_name, repair_subject, repair_source, repair_type,
+                                   failure_date, failure_description, reporter_name,
+                                   reporter_department=None, issue_photos=None):
+    """
+    Create a repair request from the maintenance portal (operator-initiated)
+
+    Args:
+        asset_name: Asset name
+        repair_subject: Subject of the repair
+        repair_source: Source of repair (ตามแผน/นอกแผน)
+        repair_type: Type of repair (ซ่อม/ติดตั้งใหม่)
+        failure_date: Date of failure
+        failure_description: Description of the issue
+        reporter_name: Name of reporter
+        reporter_department: Department of reporter
+        issue_photos: List of photo URLs
+    """
+    try:
+        # Parse issue_photos if JSON string
+        if isinstance(issue_photos, str):
+            try:
+                issue_photos = json.loads(issue_photos)
+            except:
+                issue_photos = []
+        elif issue_photos is None:
+            issue_photos = []
+
+        # Validate required fields
+        if not asset_name:
+            frappe.throw(_("Asset is required"))
+        if not repair_subject:
+            frappe.throw(_("Subject is required"))
+        if not repair_source:
+            frappe.throw(_("Repair source is required"))
+        if not repair_type:
+            frappe.throw(_("Repair type is required"))
+        if len(issue_photos) == 0:
+            frappe.throw(_("At least 1 photo is required"))
+
+        # Create Asset Repair document
+        repair = frappe.get_doc({
+            "doctype": "Asset Repair",
+            "asset": asset_name,
+            "failure_date": failure_date or frappe.utils.now(),
+            "repair_subject": repair_subject,
+            "repair_source": repair_source,
+            "repair_type": repair_type,
+            "description": failure_description,
+            "repair_status": "Pending",
+            "reported_by": frappe.session.user,
+            "reporter_department": reporter_department,
+            "requires_inspector_verification": 1,
+            "verification_status": "Pending Verification"
+        })
+        repair.insert(ignore_permissions=True)
+
+        # Attach issue photos
+        for idx, photo_url in enumerate(issue_photos, start=1):
+            if photo_url:
+                attach_file_to_doc("Asset Repair", repair.name, photo_url, f"Issue Photo {idx}")
+
+        # Notify engineers about new issue
+        try:
+            from tub_suite.overrides.asset_repair_override import notify_engineer_on_new_issue
+            notify_engineer_on_new_issue(repair)
+        except Exception as e:
+            frappe.logger().error(f"Failed to notify engineers: {str(e)}")
+
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "repair_name": repair.name,
+            "message": _("Repair request created successfully")
+        }
+
+    except Exception as e:
+        frappe.logger().error(f"Error creating operator repair request: {str(e)}")
+        import traceback
+        frappe.logger().error(traceback.format_exc())
+        frappe.throw(_("Error creating repair request: {0}").format(str(e)))
+
+@frappe.whitelist()
 def complete_repair(repair_name, repair_notes="", after_repair_photos=None):
     """
     Complete a repair request
@@ -291,7 +374,6 @@ def get_maintenance_by_asset(asset_name):
     """
     try:
         import traceback
-        print(f"\n🔵 API CALLED: get_maintenance_by_asset({asset_name}) - v2.0.1 CODE LOADED\n")
         frappe.logger().info(f"get_maintenance_by_asset called with asset_name: {asset_name}")
 
         if not asset_name:
@@ -679,18 +761,16 @@ def get_repairs_needing_verification():
     """
     Get repairs that are finished and need verification by the logged-in user
     Returns repairs where:
-    - workflow_state = "Finished"
+    - workflow_state = "Pending Supervisor Verification"
     - reported_by = current user
-    - verification_status != "Verified - Passed"
 
     Used by mobile portal to show pending verifications to original reporters
     """
     try:
         repairs = frappe.get_all("Asset Repair",
             filters={
-                "workflow_state": "Finished",
-                "reported_by": frappe.session.user,
-                "verification_status": ["!=", "Verified - Passed"]
+                "workflow_state": "Pending Supervisor Verification",
+                "reported_by": frappe.session.user
             },
             fields=[
                 "name", "asset", "description", "failure_date",
