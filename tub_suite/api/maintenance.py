@@ -253,6 +253,16 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
         })
         repair.insert(ignore_permissions=True)
 
+        # Set photo field values and attach files
+        if len(issue_photos) > 0:
+            repair.issue_photos = issue_photos[0]
+        if len(issue_photos) > 1:
+            repair.issue_photos_2 = issue_photos[1]
+
+        # Save field values
+        if len(issue_photos) > 0:
+            repair.save(ignore_permissions=True)
+
         # Attach issue photos
         for idx, photo_url in enumerate(issue_photos, start=1):
             if photo_url:
