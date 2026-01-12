@@ -6,6 +6,20 @@
 
 ---
 
+## 🔥 CRITICAL: READ THIS AFTER CONTEXT COMPACT
+
+**If starting a new session after context compaction, READ THESE FILES IN ORDER:**
+
+1. **CLAUDE_RULES.md** (this file)
+2. **WORKFLOW_AND_FIELDS.md**
+3. **CRITICAL_LESSONS_LEARNED.md** ⚠️ NEW - Documents catastrophic mistakes
+
+**DO NOT SKIP CRITICAL_LESSONS_LEARNED.md** - It contains mistakes that wasted 3 days of user's time.
+
+---
+
+---
+
 ## 🚨 RULE #1: DOCUMENTATION
 
 ### ONLY ONE SOURCE OF TRUTH:

@@ -34,10 +34,6 @@ fixtures = [
     {
         "dt": "Notification",
         "filters": [["is_standard", "=", 0]]  # Only custom notifications
-    },
-    {
-        "dt": "Print Format",
-        "filters": [["name", "in", ["Asset QR Label 50x30mm"]]]
     }
 ]
 
