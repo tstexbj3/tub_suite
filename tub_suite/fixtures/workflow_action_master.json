@@ -61,5 +61,68 @@
   "modified": "2025-08-20 05:08:23.277716",
   "name": "Cancel",
   "workflow_action_name": "Cancel"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-09 17:57:54.767691",
+  "name": "Supervisor Verify",
+  "workflow_action_name": "Supervisor Verify"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:03:25.999008",
+  "name": "Finish Repair",
+  "workflow_action_name": "Finish Repair"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:15:26.840433",
+  "name": "Gm Approve Section 1",
+  "workflow_action_name": "Gm Approve Section 1"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:16:15.365014",
+  "name": "GM Reject",
+  "workflow_action_name": "GM Reject"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:16:36.032896",
+  "name": "Engineering Assessment Complete",
+  "workflow_action_name": "Engineering Assessment Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:16:48.536579",
+  "name": "Supervisor Review Complete",
+  "workflow_action_name": "Supervisor Review Complete"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:17:30.524431",
+  "name": "GM Final Approve",
+  "workflow_action_name": "GM Final Approve"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:18:02.960464",
+  "name": "GM Final Reject",
+  "workflow_action_name": "GM Final Reject"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-10 15:18:27.667929",
+  "name": "Supervisor Reject",
+  "workflow_action_name": "Supervisor Reject"
  }
 ]

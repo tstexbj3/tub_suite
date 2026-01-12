@@ -115,5 +115,131 @@
   "name": "Pending Approval",
   "style": "",
   "workflow_state_name": "Pending Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:26.302495",
+  "name": "Pending Reporter Confirmation",
+  "style": "Primary",
+  "workflow_state_name": "Pending Reporter Confirmation"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:30.429786",
+  "name": "Pending Reporter Supervisor Verification",
+  "style": "Primary",
+  "workflow_state_name": "Pending Reporter Supervisor Verification"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:35.110802",
+  "name": "Pending Engineering Verification",
+  "style": "Primary",
+  "workflow_state_name": "Pending Engineering Verification"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:38.031149",
+  "name": "Pending Engineering Supervisor Approval",
+  "style": "Primary",
+  "workflow_state_name": "Pending Engineering Supervisor Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:40.502635",
+  "name": "Pending Installation",
+  "style": "Primary",
+  "workflow_state_name": "Pending Installation"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:43.914529",
+  "name": "Pending Acceptance Test",
+  "style": "Primary",
+  "workflow_state_name": "Pending Acceptance Test"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:46.693256",
+  "name": "Pending Final Inspection",
+  "style": "Primary",
+  "workflow_state_name": "Pending Final Inspection"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:10.004989",
+  "name": "Pending GM Approval Section 1",
+  "style": "Primary",
+  "workflow_state_name": "Pending GM Approval Section 1"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:15.266840",
+  "name": "Pending Engineering Supervisor Review",
+  "style": "Primary",
+  "workflow_state_name": "Pending Engineering Supervisor Review"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:17.254059",
+  "name": "Pending GM Final Approval",
+  "style": "Primary",
+  "workflow_state_name": "Pending GM Final Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:19.027558",
+  "name": "Approved for Repair",
+  "style": "Primary",
+  "workflow_state_name": "Approved for Repair"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:22.475291",
+  "name": "Repair In Progress",
+  "style": "Primary",
+  "workflow_state_name": "Repair In Progress"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-10 15:03:42.707883",
+  "name": "Pending Supervisor Verification",
+  "style": "",
+  "workflow_state_name": "Pending Supervisor Verification"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:12.720516",
+  "name": "Pending Engineering Assessment",
+  "style": "Primary",
+  "workflow_state_name": "Pending Engineering Assessment"
  }
 ]

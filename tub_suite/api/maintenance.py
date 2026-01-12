@@ -215,6 +215,9 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
         issue_photos: List of photo URLs
     """
     try:
+        # Log what portal is sending
+        frappe.logger().info(f"create_operator_repair_request called with repair_type='{repair_type}'")
+
         # Parse issue_photos if JSON string
         if isinstance(issue_photos, str):
             try:
@@ -252,6 +255,7 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
             "verification_status": "Pending Verification"
         })
         repair.insert(ignore_permissions=True)
+        frappe.logger().info(f"After insert: repair_type='{repair.repair_type}'")
 
         # Set photo field values and attach files
         if len(issue_photos) > 0:
@@ -262,6 +266,7 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
         # Save field values
         if len(issue_photos) > 0:
             repair.save(ignore_permissions=True)
+            frappe.logger().info(f"After save: repair_type='{repair.repair_type}'")
 
         # Attach issue photos
         for idx, photo_url in enumerate(issue_photos, start=1):

@@ -17,7 +17,10 @@ fixtures = [
         "dt": "Property Setter",
         "filters": [["doc_type", "in", ["Asset Repair", "Asset", "Asset Maintenance"]]]
     },
-    {"dt": "Workflow"},
+    {
+        "dt": "Workflow",
+        "filters": [["document_type", "=", "Asset Repair"]]
+    },
     {"dt": "Workflow State"},
     {"dt": "Workflow Action Master"},
     {

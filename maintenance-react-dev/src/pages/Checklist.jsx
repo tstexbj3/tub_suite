@@ -15,11 +15,30 @@ export default function Checklist() {
   const [hasIssue, setHasIssue] = useState(false)
   const [issueDesc, setIssueDesc] = useState('')
   const [loading, setLoading] = useState(true)
+  const [userRoles, setUserRoles] = useState([])
   const { t } = useTranslation()
 
   useEffect(() => {
+    fetchUserRoles()
     loadTasks()
   }, [assetName])
+
+  const fetchUserRoles = async () => {
+    try {
+      const response = await fetch('/api/method/tub_suite.api.maintenance.get_user_roles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Frappe-CSRF-Token': window.csrf_token || ''
+        }
+      })
+      const data = await response.json()
+      setUserRoles(data.message || [])
+    } catch (error) {
+      console.error('Error fetching user roles:', error)
+      setUserRoles([])
+    }
+  }
 
   const loadTasks = async () => {
     setLoading(true)
@@ -114,14 +133,30 @@ export default function Checklist() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="loading-state">⏳ Loading tasks...</div>
-        ) : tasks.length === 0 ? (
-          <div className="no-results">
-            <p>📋 No maintenance tasks found for this asset</p>
+        {/* Report Issue Button - Always visible for scanned asset */}
+        {assetInfo && (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <button
+              className="primary"
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              onClick={() => navigate(`/report-issue/${assetName}`)}
+            >
+              🔧 {t('report_issue')} / แจ้งซ่อม
+            </button>
           </div>
-        ) : (
-          <div className="task-list">
+        )}
+
+        {/* PM Tasks - ONLY for Maintenance User or Maintenance Manager */}
+        {(userRoles.includes('Maintenance User') || userRoles.includes('Maintenance Manager')) && (
+          <>
+            {loading ? (
+              <div className="loading-state">⏳ Loading tasks...</div>
+            ) : tasks.length === 0 ? (
+              <div className="no-results">
+                <p>📋 No maintenance tasks found for this asset</p>
+              </div>
+            ) : (
+              <div className="task-list">
             {tasks.map(task => {
               // Check if task was completed today or has a pending repair
               const today = new Date().toISOString().split('T')[0]
@@ -168,7 +203,9 @@ export default function Checklist() {
                 </div>
               )
             })}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     )
