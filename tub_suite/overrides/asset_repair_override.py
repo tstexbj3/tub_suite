@@ -52,6 +52,12 @@ class CustomAssetRepair(AssetRepair):
 
         before_save_asset_repair(self, None)
 
+    def check_repair_status(self):
+        """Override ERPNext's check_repair_status to bypass repair_status validation
+        We use workflow_state instead of repair_status for tracking"""
+        # Skip ERPNext's repair_status validation - we manage this via workflow_state
+        pass
+
     def before_submit(self):
         """Validate engineer signature"""
         super(CustomAssetRepair, self).before_submit()
@@ -130,33 +136,69 @@ def validate_asset_repair(doc, method):
             frappe.MandatoryError
         )
 
+    # For workflow transitions, check OLD state to validate who can perform the action
+    old_workflow_state = None
+    if not doc.is_new():
+        old_workflow_state = frappe.db.get_value("Asset Repair", doc.name, "workflow_state")
+
+    # Use old state for permission checks if it exists (during transitions)
+    check_state = old_workflow_state if old_workflow_state else workflow_state
+
     # Get user roles
     user_roles = frappe.get_roles()
     manager_roles = ["Maintenance Manager", "Quality Manager"]
     inspector_roles = ["Maintenance User"]
     engineer_roles = ["Engineering Team"]
+    eng_supervisor_roles = ["Engineering Supervisor"]
     is_manager = any(role in user_roles for role in manager_roles)
     is_inspector = any(role in user_roles for role in inspector_roles)
     is_engineer = any(role in user_roles for role in engineer_roles)
+    is_eng_supervisor = any(role in user_roles for role in eng_supervisor_roles)
     supervisor_roles = ["Supervisor"]
     is_supervisor = any(role in user_roles for role in supervisor_roles)
 
+    # CRITICAL: Allow Draft/new documents FIRST before any state checks
+    if not check_state or check_state == "Draft" or check_state == "Approved for Repair":
+        return  # Allow creating new repairs and editing in Draft/Approved states
+
     # Special case: Pending Supervisor Verification - only reporter OR managers can edit
-    if workflow_state == "Pending Supervisor Verification":
+    if check_state == "Pending Supervisor Verification":
         current_user = frappe.session.user
         is_original_reporter = (doc.get("reported_by") == current_user)
         if is_original_reporter or is_manager:
             return  # Allow editing
         # Block everyone else (including engineers who are not the reporter)
 
+    # Special case: Pending Reporter Confirmation - only reporter OR managers can edit
+    if check_state == "Pending Reporter Confirmation":
+        current_user = frappe.session.user
+        is_original_reporter = (doc.get("reported_by") == current_user)
+        if is_original_reporter or is_manager:
+            return  # Allow editing (reporter confirms via portal)
+        else:
+            frappe.throw(_("Only the original reporter can edit in Pending Reporter Confirmation state"))
 
-    # Allow free editing ONLY in Draft state for engineers and managers
-    if not workflow_state or workflow_state == "Draft" or workflow_state == "Pending Engineering Assessment" or workflow_state == "Pending Engineering Supervisor Review" or workflow_state == "Approved for Repair":
-        # Maintenance Users should NOT access ERPNext desk at all
-        # They only use mobile portal
-        # Engineers can only edit in Draft state
-        # Rejected repairs require creating NEW repair document
-        return
+    # State-specific permission checks
+    # Pending Engineering Assessment - ONLY Engineering Team can edit
+    if check_state == "Pending Engineering Assessment":
+        if is_engineer:
+            return  # Allow Engineering Team ONLY
+        else:
+            frappe.throw(_("Only Engineering Team can edit in Pending Engineering Assessment state"))
+
+    # Pending Engineering Supervisor Review - ONLY Engineering Supervisor can edit
+    if check_state == "Pending Engineering Supervisor Review":
+        if is_eng_supervisor:
+            return  # Allow Engineering Supervisor ONLY
+        else:
+            frappe.throw(_("Only Engineering Supervisor can edit in Pending Engineering Supervisor Review state"))
+
+    # Pending GM Final Approval - ONLY GM/Managers can edit
+    if check_state == "Pending GM Final Approval":
+        if is_manager:
+            return  # Allow Managers only
+        else:
+            frappe.throw(_("Only GM/Maintenance Manager can edit in Pending GM Final Approval state"))
 
     # After Draft: Lock ALL fields for engineers
     if not is_manager:

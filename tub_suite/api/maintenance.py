@@ -112,7 +112,7 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
 
         repair = frappe.get_doc({
             "doctype": "Asset Repair",
-            "asset": asset_name,
+            "asset": asset_id,
             "failure_date": frappe.utils.now(),
             "description": issue_description,
             "repair_status": "Pending",
@@ -242,6 +242,7 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
         # Map short form to full form for repair_source
         if repair_source == "Portal":
             repair_source = "Portal (แจ้งผ่านระบบ)"
+
 
         # Create Asset Repair document
         repair = frappe.get_doc({
@@ -827,9 +828,8 @@ def get_repairs_for_confirmation():
     try:
         repairs = frappe.get_all("Asset Repair",
             filters={
-                "workflow_state": "Finished",
+                "workflow_state": "Pending Reporter Confirmation",
                 "reported_by": frappe.session.user,
-                "reporter_confirmation_date": ["is", "not set"]
             },
             fields=[
                 "name", "asset", "description", "failure_date",
@@ -876,12 +876,22 @@ def submit_reporter_confirmation(repair_name, confirmation_photos=None, confirma
             frappe.throw(_("Only the original reporter can confirm this repair"))
 
         # Verify workflow state
-        if repair.workflow_state != "Finished":
-            frappe.throw(_("Repair must be in Finished state for confirmation"))
+        if repair.workflow_state != "Pending Reporter Confirmation":
+            frappe.throw(_("Repair must be in Pending Reporter Confirmation state for confirmation"))
 
         # Update confirmation fields
         if confirmation_photos:
-            repair.reporter_confirmation_photos = confirmation_photos
+            # Parse JSON if it's a string and extract first photo
+            if isinstance(confirmation_photos, str):
+                try:
+                    import json
+                    photos_list = json.loads(confirmation_photos)
+                    if photos_list and len(photos_list) > 0:
+                        repair.reporter_confirmation_photos = photos_list[0]
+                except:
+                    repair.reporter_confirmation_photos = confirmation_photos
+            else:
+                repair.reporter_confirmation_photos = confirmation_photos
 
         if confirmation_notes:
             repair.reporter_confirmation_notes = confirmation_notes
@@ -892,9 +902,13 @@ def submit_reporter_confirmation(repair_name, confirmation_photos=None, confirma
         # Auto-fill confirmation date
         repair.reporter_confirmation_date = frappe.utils.now()
 
-        # Save the document (allow on submit since it's in Finished state)
+        # Save the document first
         repair.flags.ignore_permissions = False
         repair.save(ignore_permissions=False)
+        
+        # Apply workflow transition to Finished
+        from frappe.model.workflow import apply_workflow
+        apply_workflow(repair, "Reporter Confirm")
         frappe.db.commit()
 
         return {

@@ -109,12 +109,13 @@ export default function ConfirmRepair() {
           )}
         </div>
 
-        <h3>{i18n.language === 'th' ? 'รูปถ่ายยืนยัน (ถ้ามี)' : 'Confirmation Photos (Optional)'}</h3>
+        <h3>{i18n.language === 'th' ? 'รูปถ่ายยืนยัน (ถ้ามี)' : 'Confirmation Photo (Optional)'}</h3>
         <PhotoUpload
           photos={photos}
           setPhotos={setPhotos}
           activityType="CONFIRM"
           assetName={repair.asset || 'ASSET'}
+          maxPhotos={1}
         />
 
         <label className="form-label">{i18n.language === 'th' ? 'หมายเหตุเพิ่มเติม (ถ้ามี)' : 'Additional Notes (Optional)'}</label>

@@ -1,10 +1,10 @@
 # Asset Repair Workflow & Fields - SINGLE SOURCE OF TRUTH
 
-**Last Updated:** 2026-01-12
+**Last Updated:** 2026-01-21
 **Status:** CURRENT AND ACCURATE
-**Version:** 2.1.0 (Supervisor-Only Workflow)
+**Version:** 2.1.0 (Supervisor-Only Workflow with Reporter Confirmation)
 
-## Recent Bug Fixes (2026-01-12)
+## Recent Updates (2026-01-12)
 1. **Fixed FM-EN-04 Print Format:**
    - Letterhead banner now displays in header (not logo)
    - Asset item_code shown instead of asset ID
@@ -39,7 +39,7 @@
 
 **Key Change (2026-01-10):** Operators REMOVED from workflow. Supervisors handle everything.
 
-### Complete Flow (9 States):
+### Complete Flow (10 States):
 
 ```
 1. Draft
@@ -76,12 +76,20 @@
 7. Pending Supervisor Verification
    ├─ Supervisor (who originally reported) verifies repair
    ├─ Section 3B shows: Hygiene checklist, cleanliness checks
-   └─ Action: [Supervisor Verify] → Finished
+   └─ Action: [Supervisor Verify] → Pending Reporter Confirmation
 
-8. Finished
+8. Pending Reporter Confirmation
+   ├─ Original reporter confirms repair via portal
+   ├─ Can attach 1 confirmation photo (optional)
+   ├─ Can add confirmation notes (optional)
+   ├─ Confirmation date auto-filled
+   └─ Action: [Reporter Confirm] → Finished
+
+9. Finished
    └─ LOCKED - All fields read-only
+   └─ Shows reporter confirmation section with submitted data
 
-9. Rejected
+10. Rejected
    └─ Can happen at: GM Approval S1, GM Final Approval, or Supervisor Verification
 ```
 
