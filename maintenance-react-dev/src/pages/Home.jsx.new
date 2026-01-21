@@ -1,0 +1,17 @@
+
+  const fetchFinishedRepairs = async () => {
+    try {
+      const response = await fetch('/api/method/tub_suite.api.maintenance.get_repairs_for_confirmation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Frappe-CSRF-Token': window.csrf_token || ''
+        }
+      })
+      const data = await response.json()
+      setFinishedRepairs(data.message || [])
+    } catch (error) {
+      console.error('Error fetching finished repairs:', error)
+      setFinishedRepairs([])
+    }
+  }

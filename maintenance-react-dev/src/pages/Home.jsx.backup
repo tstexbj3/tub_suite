@@ -77,23 +77,6 @@ export default function Home() {
     }
   }
 
-  const fetchFinishedRepairs = async () => {
-    try {
-      const response = await fetch('/api/method/tub_suite.api.maintenance.get_repairs_for_confirmation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Frappe-CSRF-Token': window.csrf_token || ''
-        }
-      })
-      const data = await response.json()
-      setFinishedRepairs(data.message || [])
-    } catch (error) {
-      console.error('Error fetching finished repairs:', error)
-      setFinishedRepairs([])
-    }
-  }
-
   return (
     <div className="container">
       <div className="welcome-section">
@@ -135,45 +118,6 @@ export default function Home() {
                 <p className="verification-item-meta">
                   {repair.location && `📍 ${repair.location} • `}
                   {new Date(repair.completion_date || repair.failure_date).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Finished Repairs Needing Confirmation */}
-      {!loading && finishedRepairs.length > 0 && (
-        <div className="verification-alert" style={{borderLeft: '4px solid #10b981'}}>
-          <div className="verification-alert-header">
-            <span className="verification-badge" style={{backgroundColor: '#10b981'}}>{finishedRepairs.length}</span>
-            <h3>
-              ✅ {i18n.language === 'th' ? 'รอการยืนยัน' : 'Awaiting Confirmation'}
-            </h3>
-          </div>
-          <p>
-            {i18n.language === 'th'
-              ? `คุณมี ${finishedRepairs.length} งานซ่อมที่เสร็จแล้ว กรุณายืนยันผลการซ่อม`
-              : `You have ${finishedRepairs.length} finished repair(s) awaiting your confirmation`
-            }
-          </p>
-          <div className="verification-list">
-            {finishedRepairs.map((repair) => (
-              <div
-                key={repair.name}
-                className="verification-item"
-                onClick={() => navigate(`/confirm/${repair.name}`)}
-              >
-                <div className="verification-item-header">
-                  <strong>{repair.asset_name}</strong>
-                  <span className="verification-item-badge" style={{backgroundColor: '#10b981'}}>
-                    {i18n.language === 'th' ? 'กรุณายืนยัน' : 'Please Confirm'}
-                  </span>
-                </div>
-                <p className="verification-item-description">{repair.description}</p>
-                <p className="verification-item-meta">
-                  {repair.location && `📍 ${repair.location} • `}
-                  {new Date(repair.completion_handover_date || repair.failure_date).toLocaleDateString()}
                 </p>
               </div>
             ))}

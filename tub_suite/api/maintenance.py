@@ -238,6 +238,10 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
             frappe.throw(_("Repair type is required"))
         if len(issue_photos) == 0:
             frappe.throw(_("At least 1 photo is required"))
+        
+        # Map short form to full form for repair_source
+        if repair_source == "Portal":
+            repair_source = "Portal (แจ้งผ่านระบบ)"
 
         # Create Asset Repair document
         repair = frappe.get_doc({
@@ -250,9 +254,7 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
             "description": failure_description,
             "repair_status": "Pending",
             "reported_by": frappe.session.user,
-            "reporter_department": reporter_department,
-            "requires_inspector_verification": 1,
-            "verification_status": "Pending Verification"
+            "reporter_department": reporter_department
         })
         repair.insert(ignore_permissions=True)
         frappe.logger().info(f"After insert: repair_type='{repair.repair_type}'")
@@ -809,6 +811,102 @@ def get_repairs_needing_verification():
     except Exception as e:
         frappe.logger().error(f"Error fetching repairs needing verification: {str(e)}")
         return []
+
+
+@frappe.whitelist()
+def get_repairs_for_confirmation():
+    """
+    Get repairs in Finished state that need reporter confirmation
+    Returns repairs where:
+    - workflow_state = "Finished"
+    - reported_by = current user
+    - reporter_confirmation_date is NULL (not yet confirmed)
+
+    Used by portal to show finished repairs awaiting final confirmation
+    """
+    try:
+        repairs = frappe.get_all("Asset Repair",
+            filters={
+                "workflow_state": "Finished",
+                "reported_by": frappe.session.user,
+                "reporter_confirmation_date": ["is", "not set"]
+            },
+            fields=[
+                "name", "asset", "description", "failure_date",
+                "workflow_state", "repair_status", "reported_by",
+                "completion_handover_date", "repair_result_status"
+            ],
+            order_by="completion_handover_date desc"
+        )
+
+        # Enrich with asset details
+        for repair in repairs:
+            if repair.asset:
+                asset = frappe.get_doc("Asset", repair.asset)
+                repair["asset_name"] = asset.asset_name
+                repair["item_code"] = asset.item_code
+                repair["item_name"] = asset.item_name
+                repair["location"] = asset.location or ""
+
+        return repairs
+
+    except Exception as e:
+        frappe.logger().error(f"Error fetching repairs for confirmation: {str(e)}")
+        return []
+
+
+@frappe.whitelist()
+def submit_reporter_confirmation(repair_name, confirmation_photos=None, confirmation_notes="", signature=None):
+    """
+    Reporter confirms repair completion from portal
+    Updates reporter_confirmation fields in Finished state
+
+    Args:
+        repair_name: Name of the Asset Repair document
+        confirmation_photos: JSON string of photo attachments
+        confirmation_notes: Reporter's notes about the confirmation
+        signature: Signature data
+    """
+    try:
+        # Get the repair document
+        repair = frappe.get_doc("Asset Repair", repair_name)
+
+        # Verify user is the original reporter
+        if repair.reported_by != frappe.session.user:
+            frappe.throw(_("Only the original reporter can confirm this repair"))
+
+        # Verify workflow state
+        if repair.workflow_state != "Finished":
+            frappe.throw(_("Repair must be in Finished state for confirmation"))
+
+        # Update confirmation fields
+        if confirmation_photos:
+            repair.reporter_confirmation_photos = confirmation_photos
+
+        if confirmation_notes:
+            repair.reporter_confirmation_notes = confirmation_notes
+
+        if signature:
+            repair.reporter_signature = signature
+
+        # Auto-fill confirmation date
+        repair.reporter_confirmation_date = frappe.utils.now()
+
+        # Save the document (allow on submit since it's in Finished state)
+        repair.flags.ignore_permissions = False
+        repair.save(ignore_permissions=False)
+        frappe.db.commit()
+
+        return {
+            "success": True,
+            "message": _("Confirmation submitted successfully"),
+            "repair_name": repair_name
+        }
+
+    except Exception as e:
+        frappe.logger().error(f"Error submitting reporter confirmation: {str(e)}")
+        frappe.db.rollback()
+        frappe.throw(_("Error submitting confirmation: {0}").format(str(e)))
 
 
 @frappe.whitelist()

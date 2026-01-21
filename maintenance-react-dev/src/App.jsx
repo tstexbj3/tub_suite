@@ -4,6 +4,7 @@ import Home from './pages/Home'
 import AssetSearch from './pages/AssetSearch'
 import Checklist from './pages/Checklist'
 import VerifyRepair from './pages/VerifyRepair'
+import ConfirmRepair from './pages/ConfirmRepair'
 import TodoList from './pages/TodoList'
 import ReportIssue from './pages/ReportIssue'
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="/todos" element={<TodoList />} />
           <Route path="/report-issue/:assetName" element={<ReportIssue />} />
           <Route path="/checklist/:assetName" element={<Checklist />} />
+          <Route path="/confirm/:repairName" element={<ConfirmRepair />} />
           <Route path="/verify/:repairName" element={<VerifyRepair />} />
         </Routes>
       </div>

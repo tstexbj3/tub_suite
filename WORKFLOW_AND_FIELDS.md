@@ -182,6 +182,36 @@
 
 ---
 
+---
+
+### Section 4: Reporter Confirmation (ผู้แจ้งยืนยัน)
+
+**Fieldname:** `reporter_confirmation_section`
+**Visible when:** `eval:doc.workflow_state=="Finished"`
+**Filled by:** Original reporter (on portal in Finished state)
+
+**Fields:**
+- `reporter_confirmation_photos` - Confirmation Photos (Attach Image) - Optional
+- `reporter_confirmation_notes` - Confirmation Notes (Small Text) - Optional
+- `reporter_confirmation_date` - Confirmation Date (Datetime) - Auto-filled
+
+**Portal Implementation:**
+- API: `get_repairs_for_confirmation()` - Fetches repairs in Finished state
+- API: `submit_reporter_confirmation()` - Submits confirmation from portal
+- Page: `ConfirmRepair.jsx` - Portal confirmation form
+
+## Updated Auto-Fill Signature Dates
+
+All signature date fields are auto-filled via `before_save_asset_repair()`:
+1. supervisor_section1_date
+2. gm_section1_approval_date
+3. engineering_operator_sign_date
+4. eng_supervisor_review_date
+5. manager_approval_date
+6. supervisor_verification_date
+7. reporter_confirmation_date
+
+
 ## 🔄 Auto-Fill Behavior
 
 ### completion_handover_date
