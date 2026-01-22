@@ -12,7 +12,8 @@ from frappe.utils.file_manager import save_file
 @frappe.whitelist()
 def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0,
                       issue_description="", notes="", inspection_photos=None,
-                      issue_photos=None, before_photo=None, after_photo=None):
+                      issue_photos=None, before_photo=None, after_photo=None,
+                      repair_subject="", repair_type=""):
     """
     Submit maintenance task completion
 
@@ -110,16 +111,21 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
         task_doc = frappe.get_doc("Asset Maintenance Task", task_name)
         task_label = task_doc.maintenance_task or task_doc.task_name or "Unnamed Task"
 
+        # Get user's department
+        user_dept = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "department") or None
+
         repair = frappe.get_doc({
             "doctype": "Asset Repair",
-            "asset": asset_id,
+            "asset": asset_name,
             "failure_date": frappe.utils.now(),
             "description": issue_description,
-            "repair_status": "Pending",
-            "reported_by": frappe.session.user,  # Track who reported
-            "maintenance_task": task_label,  # Which task this came from
-            "requires_inspector_verification": 1,  # Enable verification workflow
-            "verification_status": "Pending Verification"
+            "repair_subject": repair_subject,
+            "repair_type": repair_type,
+            "repair_source": "Planned Maintenance (ตามแผน)",
+            "repair_status": "Draft",
+            "reported_by": frappe.session.user,
+            "reporter_department": user_dept,
+            "maintenance_task": task_label
         })
         repair.insert(ignore_permissions=True)
         repair_name = repair.name
@@ -129,15 +135,28 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
             if photo_url:
                 attach_file_to_doc("Asset Repair", repair.name, photo_url, f"Issue Photo {idx + 1}")
 
-        # Notify engineers about new issue (only once per repair creation)
-        notification_key = f"notified_new_issue_{repair.name}"
-        if not frappe.flags.get(notification_key):
-            try:
-                from tub_suite.overrides.asset_repair_override import notify_engineer_on_new_issue
-                notify_engineer_on_new_issue(repair)
-                frappe.flags[notification_key] = True
-            except Exception as e:
-                frappe.logger().error(f"Failed to notify engineers: {str(e)}")
+        # Notify Maintenance Supervisor about new PM issue
+        try:
+            supervisors = frappe.get_all("Has Role",
+                filters={"role": "Maintenance Supervisor", "parenttype": "User"},
+                fields=["parent"]
+            )
+            for supervisor in supervisors:
+                frappe.sendmail(
+                    recipients=[supervisor.parent],
+                    subject=f"New PM Issue Reported: {repair_subject}",
+                    message=f"""
+                        <p><strong>New PM Issue Reported</strong></p>
+                        <p>Asset: {asset_name}</p>
+                        <p>Task: {task_label}</p>
+                        <p>Subject: {repair_subject}</p>
+                        <p>Type: {repair_type}</p>
+                        <p>Repair ID: {repair.name}</p>
+                        <p>Please review and verify in ERPNext.</p>
+                    """
+                )
+        except Exception as e:
+            frappe.logger().error(f"Failed to notify Maintenance Supervisor: {str(e)}")
 
         # NOTE: Asset status change to "Out of Order" is handled by engineer
         # when they set issue_severity to "Major - Asset Must Stop"

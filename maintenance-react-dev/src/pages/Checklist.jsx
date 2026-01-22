@@ -14,6 +14,8 @@ export default function Checklist() {
   const [notes, setNotes] = useState('')
   const [hasIssue, setHasIssue] = useState(false)
   const [issueDesc, setIssueDesc] = useState('')
+  const [repairSubject, setRepairSubject] = useState('')
+  const [repairType, setRepairType] = useState('')
   const [loading, setLoading] = useState(true)
   const [userRoles, setUserRoles] = useState([])
   const { t } = useTranslation()
@@ -77,6 +79,16 @@ export default function Checklist() {
       return
     }
 
+    if (hasIssue && !repairSubject.trim()) {
+      alert('Please provide repair subject / กรุณาระบุเรื่องที่แจ้ง')
+      return
+    }
+
+    if (hasIssue && !repairType) {
+      alert('Please select repair type / กรุณาเลือกประเภทการซ่อม')
+      return
+    }
+
     try {
       const response = await api.submitTask({
         maintenance_name: selectedTask.parent,
@@ -85,6 +97,8 @@ export default function Checklist() {
         has_issue: hasIssue ? 1 : 0,
         notes,
         issue_description: issueDesc,
+        repair_subject: repairSubject,
+        repair_type: repairType,
         inspection_photos: hasIssue ? [] : photos,
         issue_photos: hasIssue ? photos : []
       })
@@ -106,6 +120,8 @@ export default function Checklist() {
       setPhotos([])
       setNotes('')
       setIssueDesc('')
+      setRepairSubject('')
+      setRepairType('')
       setHasIssue(false)
 
       // Don't reload - trust the immediate state update from backend response
@@ -232,15 +248,52 @@ export default function Checklist() {
           </label>
 
           {hasIssue && (
-            <div className="form-group">
-              <label>{t('issue_description')}</label>
-              <textarea
-                placeholder={t('issue_description')}
-                value={issueDesc}
-                onChange={(e) => setIssueDesc(e.target.value)}
-                rows="4"
-              />
-            </div>
+            <>
+              <div className="form-group">
+                <label>{t('issue_description')}</label>
+                <textarea
+                  placeholder={t('issue_description')}
+                  value={issueDesc}
+                  onChange={(e) => setIssueDesc(e.target.value)}
+                  rows="4"
+                />
+              </div>
+
+              <div className="form-group">
+                <label>เรื่องที่แจ้ง (Repair Subject) *</label>
+                <input
+                  type="text"
+                  placeholder="ระบุเรื่องที่แจ้ง เช่น ปั้มน้ำเสีย, มอเตอร์ไม่ทำงาน"
+                  value={repairSubject}
+                  onChange={(e) => setRepairSubject(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>ประเภทการซ่อม (Repair Type) *</label>
+                <select
+                  value={repairType}
+                  onChange={(e) => setRepairType(e.target.value)}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    fontSize: '1rem'
+                  }}
+                >
+                <option value="">-- เลือกประเภทการซ่อม --</option>
+                <option value="ซ่อม (Repair)">ซ่อม (Repair)</option>
+                <option value="แก้ไข (Fix/Correction)">แก้ไข (Fix/Correction)</option>
+                <option value="ติดตั้งใหม่ (New Installation)">ติดตั้งใหม่ (New Installation)</option>
+                <option value="ปรับปรุง (Improvement)">ปรับปรุง (Improvement)</option>
+                <option value="ซ่อมบำรุงตามแผน (Planned Maintenance)">ซ่อมบำรุงตามแผน (Planned Maintenance)</option>
+                <option value="อื่นๆ (Other)">อื่นๆ (Other)</option>
+                </select>
+              </div>
+            </>
           )}
 
           <div className="form-group">
@@ -267,7 +320,7 @@ export default function Checklist() {
             <button
               className="primary"
               onClick={handleSubmit}
-              disabled={photos.length === 0 || (hasIssue && !issueDesc.trim())}
+              disabled={photos.length === 0 || (hasIssue && (!issueDesc.trim() || !repairSubject.trim() || !repairType))}
             >
               ✓ {t('submit')}
             </button>
