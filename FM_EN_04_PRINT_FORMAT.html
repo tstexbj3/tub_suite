@@ -98,7 +98,7 @@ body {
 }
 .sig-line-small {
     border-top: 1px solid #000;
-    margin-top: 15px;
+    margin-top: 3px;
     padding-top: 2px;
     font-size: 8px;
 }
@@ -107,23 +107,32 @@ body {
 .sig-row {
     display: flex;
     gap: 10px;
-    margin: 3px 0;
+    margin: 2px 0 0 0;
 }
 .sig-box {
     flex: 1;
     text-align: center;
     font-size: 9px;
+    line-height: 1;
+.sig-box div {
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+.sig-box > div:first-child {
+    font-weight: bold;
+}
 }
 .sig-box img {
     max-width: 100px;
     max-height: 50px;
-    margin: 3px auto;
+    margin: 0 auto;
     display: block;
 }
 .sig-line {
     border-top: 1px solid #000;
-    margin-top: 10px;
-    padding-top: 3px;
+    margin-top: -2px;
+    padding-top: 0;
 }
 
 table {
@@ -226,16 +235,16 @@ table th {
         <!-- TWO SIGNATURES SIDE BY SIDE - REDUCED SPACING -->
         <div class="sig-container">
             <div class="sig-small">
-                <div class="field-label">ตัวแทนผู้แจ้ง</div>
+                <div class="field-label">ต้นสังกัดอนุมัติ</div>
                 {% if doc.supervisor_section1_signature %}
                 <img src="{{ doc.supervisor_section1_signature }}">
                 {% elif doc.reporter_signature %}
                 <img src="{{ doc.reporter_signature }}">
                 {% endif %}
-                <div class="sig-line-small">วันที่: {{ frappe.utils.formatdate(doc.supervisor_section1_date or doc.failure_date, "dd/MM/yyyy") if (doc.supervisor_section1_date or doc.failure_date) else "___/___/___" }}</div>
+                <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">หัวหน้าหน่วนแผนก</div>วันที่: {{ frappe.utils.formatdate(doc.supervisor_section1_date or doc.failure_date, "dd/MM/yyyy") if (doc.supervisor_section1_date or doc.failure_date) else "___/___/___" }}</div>
             </div>
             <div class="sig-small">
-                <div class="field-label">ผู้อนุมัติ(GM)</div>
+                <div class="field-label">ผู้อนุมัติ</div>
                 {% if doc.custom_gm_signature %}
                 <img src="{{ doc.custom_gm_signature }}">
                 {% elif doc.gm_section1_signature %}
@@ -243,7 +252,7 @@ table th {
                 {% elif doc.approval_signature %}
                 <img src="{{ doc.approval_signature }}">
                 {% endif %}
-                <div class="sig-line-small">วันที่: {{ frappe.utils.formatdate(doc.gm_section1_approval_date or doc.manager_approval_date, "dd/MM/yyyy") if (doc.gm_section1_approval_date or doc.manager_approval_date) else "___/___/___" }}</div>
+                <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผช.ผู้จัดการ/ผู้จัดการ</div>วันที่: {{ frappe.utils.formatdate(doc.gm_section1_approval_date or doc.manager_approval_date, "dd/MM/yyyy") if (doc.gm_section1_approval_date or doc.manager_approval_date) else "___/___/___" }}</div>
             </div>
         </div>
     </div>
@@ -261,7 +270,7 @@ table th {
     </div>
 </div>
 
-<table>
+<table style="margin-bottom:0;">
     <thead>
         <tr>
             <th width="8%">ลำดับ</th>
@@ -288,8 +297,8 @@ table th {
     </tbody>
 </table>
 
-<div class="field-label" style="margin-top:2px;">รายการ/อะไหล่ที่ใช้:</div>
-<table>
+<div class="field-label" style="margin-top:4px;">รายการ/อะไหล่ที่ใช้:</div>
+<table style="margin-bottom:0;">
     <thead>
         <tr>
             <th width="8%">ลำดับ</th>
@@ -328,25 +337,25 @@ table th {
 <!-- THREE SIGNATURE BOXES -->
 <div class="sig-row">
     <div class="sig-box">
-        <div>ผู้ประเมิน</div>
+        <div style="font-weight:bold;">ผู้ประเมิน</div>
         {% if doc.engineering_operator_signature %}
         <img src="{{ doc.engineering_operator_signature }}">
         {% endif %}
-        <div class="sig-line">วันที่: {{ frappe.utils.formatdate(doc.engineering_operator_sign_date, "dd/MM/yyyy") if doc.engineering_operator_sign_date else "___/___/___" }}</div>
+        <div class="sig-line-small">วันที่: {{ frappe.utils.formatdate(doc.engineering_operator_sign_date, "dd/MM/yyyy") if doc.engineering_operator_sign_date else "___/___/___" }}</div>
     </div>
     <div class="sig-box">
-        <div>ผู้ควบคุมตรวจสอบ</div>
+        <div style="font-weight:bold;">ผู้ควบคุมตรวจสอบ</div>
         {% if doc.eng_supervisor_signature %}
         <img src="{{ doc.eng_supervisor_signature }}">
         {% endif %}
-        <div class="sig-line">วันที่: {{ frappe.utils.formatdate(doc.eng_supervisor_review_date, "dd/MM/yyyy") if doc.eng_supervisor_review_date else "___/___/___" }}</div>
+        <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผู้จัดการแผนกวิศวกรรม</div>วันที่: {{ frappe.utils.formatdate(doc.eng_supervisor_review_date, "dd/MM/yyyy") if doc.eng_supervisor_review_date else "___/___/___" }}</div>
     </div>
     <div class="sig-box">
-        <div>ผู้อนุมัติ</div>
+        <div style="font-weight:bold;">ผู้อนุมัติ</div>
         {% if doc.approval_signature %}
         <img src="{{ doc.approval_signature }}">
         {% endif %}
-        <div class="sig-line">วันที่: {{ frappe.utils.formatdate(doc.manager_approval_date, "dd/MM/yyyy") if doc.manager_approval_date else "___/___/___" }}</div>
+        <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผู้จัดการโรงงาน</div>วันที่: {{ frappe.utils.formatdate(doc.manager_approval_date, "dd/MM/yyyy") if doc.manager_approval_date else "___/___/___" }}</div>
     </div>
 </div>
 
@@ -413,11 +422,11 @@ table th {
     </div>
     <div class="two-col-right">
         <div style="text-align:center;">
-            <div class="field-label">ตัวแทนผู้แจ้งตรวจรับงาน</div>
+            <div class="field-label">ต้นสังกัดที่แจ้งตรวจรับงาน</div>
             {% if doc.supervisor_signature %}
             <img src="{{ doc.supervisor_signature }}" style="max-width:100px; max-height:40px; margin:5px auto; display:block;">
             {% endif %}
-            <div style="border-top: 1px solid #000; margin-top: 25px; padding-top: 3px; font-size:10px;">
+            <div style="border-top: 1px solid #000; margin-top: 3px; padding-top: 3px; font-size:10px;"><div style="font-size:9px;margin:0;padding:0;">หัวหน้าแผนก/แผนก</div>
                 วันที่: {{ frappe.utils.formatdate(doc.supervisor_verification_date, "dd/MM/yyyy") if doc.supervisor_verification_date else "" }}
             </div>
         </div>

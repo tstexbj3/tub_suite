@@ -106,6 +106,13 @@ class CustomAssetRepair(AssetRepair):
                 update_maintenance_log_on_rejection(self)
                 notify_engineer_on_rejection(self)
 
+            # Approved for Repair → Pending Supervisor Verification (Finish Repair)
+            elif old_workflow == "Approved for Repair" and new_workflow == "Pending Supervisor Verification":
+                print(f"   ✅ Finish Repair - setting completion handover date")
+                if not self.get("completion_handover_date"):
+                    frappe.db.set_value("Asset Repair", self.name, "completion_handover_date", frappe.utils.today())
+                    frappe.db.commit()
+
             # Finished → Auto-fill completion date + Notify reporter
             elif new_workflow == "Finished":
                 print(f"   ✅ Finished - setting completion date + notifying reporter")
@@ -154,29 +161,29 @@ def validate_asset_repair(doc, method):
     is_inspector = any(role in user_roles for role in inspector_roles)
     is_engineer = any(role in user_roles for role in engineer_roles)
     is_eng_supervisor = any(role in user_roles for role in eng_supervisor_roles)
-    supervisor_roles = ["Supervisor"]
+    supervisor_roles = ["Supervisor", "Maintenance Supervisor"]
     is_supervisor = any(role in user_roles for role in supervisor_roles)
 
     # CRITICAL: Allow Draft/new documents FIRST before any state checks
     if not check_state or check_state == "Draft" or check_state == "Approved for Repair":
         return  # Allow creating new repairs and editing in Draft/Approved states
 
-    # Special case: Pending Supervisor Verification - only reporter OR managers can edit
+    # Special case: Pending Supervisor Verification - only reporter OR managers OR supervisors can edit
     if check_state == "Pending Supervisor Verification":
         current_user = frappe.session.user
         is_original_reporter = (doc.get("reported_by") == current_user)
-        if is_original_reporter or is_manager:
+        if is_original_reporter or is_manager or is_supervisor:
             return  # Allow editing
         # Block everyone else (including engineers who are not the reporter)
 
-    # Special case: Pending Reporter Confirmation - only reporter OR managers can edit
+    # Special case: Pending Reporter Confirmation - only reporter OR managers OR supervisors can edit
     if check_state == "Pending Reporter Confirmation":
         current_user = frappe.session.user
         is_original_reporter = (doc.get("reported_by") == current_user)
-        if is_original_reporter or is_manager:
+        if is_original_reporter or is_manager or is_supervisor:
             return  # Allow editing (reporter confirms via portal)
         else:
-            frappe.throw(_("Only the original reporter can edit in Pending Reporter Confirmation state"))
+            frappe.throw(_("Only the original reporter or supervisor can edit in Pending Reporter Confirmation state"))
 
     # State-specific permission checks
     # Pending Engineering Assessment - ONLY Engineering Team can edit
