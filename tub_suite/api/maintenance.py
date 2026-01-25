@@ -807,8 +807,7 @@ def get_repairs_needing_verification():
         repairs = frappe.get_all("Asset Repair",
             filters={
                 "workflow_state": "Pending Supervisor Verification",
-                "reported_by": frappe.session.user,
-                "hygiene_safety_signature": ["!=", ""]  # Only show if hygienic safety section completed
+                "reported_by": frappe.session.user
             },
             fields=[
                 "name", "asset", "description", "failure_date",

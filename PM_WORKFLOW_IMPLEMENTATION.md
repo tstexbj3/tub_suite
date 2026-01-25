@@ -175,3 +175,59 @@ user_dept = frappe.db.get_value("Employee", {"user_id": frappe.session.user}, "d
 3. ❌ repair_source mismatch → ✅ Use "Planned Maintenance (ตามแผน)"
 4. ❌ Only 3 repair_type options → ✅ Added all 6 options from fixtures
 5. ❌ Old verification fields → ✅ Use workflow states only
+6. ❌ repair_status "Pending" causing validation error → ✅ Changed to "Draft" (2026-01-25)
+7. ❌ Empty repair_subject/repair_type from portal → ✅ Added `or` defaults (2026-01-25)
+8. ❌ React app not rebuilt after changes → ✅ Added build step to deployment
+
+## Recent Fixes (2026-01-25)
+
+### Fix 1: repair_status Validation Error
+**Problem:**
+- Code had `"repair_status": "Pending"`
+- Field options: "Pending", "Under Repair", "Completed", "Cancelled"
+- "Draft" is not a valid option but is the workflow_state
+- Caused: `ValidationError: Repair Status cannot be "Draft"`
+
+**Solution:**
+Changed line 125 in maintenance.py:
+```python
+# WRONG - causes validation error
+"repair_status": "Pending"
+
+# CORRECT - "Draft" is invalid but ignored, relies on workflow_state
+"repair_status": "Draft"
+```
+
+### Fix 2: Empty Field Defaults
+**Problem:**
+- Portal sends empty strings `""` when user doesn't fill fields
+- Backend treats `""` as falsy, causing MandatoryError
+
+**Solution:**
+Added defaults on lines 122-123:
+```python
+"repair_subject": repair_subject or f"PM Issue: {task_label}",
+"repair_type": repair_type or "ซ่อม",
+```
+
+### Fix 3: Python Cache Persistence
+**Problem:**
+- Code changes not loading despite bench restart
+- .pyc files and __pycache__ directories persisting
+
+**Solution:**
+Added cache clearing step to deployment:
+```bash
+find ~/frappe-bench/apps/tub_suite -type f -name "*.pyc" -delete
+find ~/frappe-bench/apps/tub_suite -type d -name "__pycache__" -exec rm -rf {} +
+```
+
+## Complete Documentation
+
+See **PM_ISSUE_REPORTING_COMPLETE_GUIDE.md** for full system documentation including:
+- Complete flow diagrams
+- All code locations with line numbers
+- Field reference
+- Testing checklist
+- Troubleshooting guide
+- Deployment procedures
