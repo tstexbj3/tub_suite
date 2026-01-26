@@ -252,7 +252,7 @@ table th {
                 {% elif doc.approval_signature %}
                 <img src="{{ doc.approval_signature }}">
                 {% endif %}
-                <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผช.ผู้จัดการ/ผู้จัดการ</div>วันที่: {{ frappe.utils.formatdate(doc.gm_section1_approval_date or doc.manager_approval_date, "dd/MM/yyyy") if (doc.gm_section1_approval_date or doc.manager_approval_date) else "___/___/___" }}</div>
+                <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผช.ผู้จัดการ/ผู้จัดการ</div>วันที่: {{ frappe.utils.formatdate(doc.gm_section1_approval_date or doc.gm_final_approval_date, "dd/MM/yyyy") if (doc.gm_section1_approval_date or doc.gm_final_approval_date) else "___/___/___" }}</div>
             </div>
         </div>
     </div>
@@ -355,7 +355,7 @@ table th {
         {% if doc.approval_signature %}
         <img src="{{ doc.approval_signature }}">
         {% endif %}
-        <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผู้จัดการโรงงาน</div>วันที่: {{ frappe.utils.formatdate(doc.manager_approval_date, "dd/MM/yyyy") if doc.manager_approval_date else "___/___/___" }}</div>
+        <div class="sig-line-small"><div style="font-size:9px;margin:0;padding:0;">ผู้จัดการโรงงาน</div>วันที่: {{ frappe.utils.formatdate(doc.gm_final_approval_date, "dd/MM/yyyy") if doc.gm_final_approval_date else "___/___/___" }}</div>
     </div>
 </div>
 

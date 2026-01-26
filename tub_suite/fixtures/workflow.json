@@ -4,7 +4,7 @@
   "doctype": "Workflow",
   "document_type": "Asset Repair",
   "is_active": 1,
-  "modified": "2026-01-10 15:24:04.906541",
+  "modified": "2026-01-26 13:37:18.257683",
   "name": "Asset Repair Workflow - Supervisor Only",
   "override_status": 0,
   "send_email_alert": 0,
@@ -168,6 +168,22 @@
     "update_field": null,
     "update_value": null,
     "workflow_builder_id": null
+   },
+   {
+    "allow_edit": "Supervisor",
+    "avoid_status_override": 0,
+    "doc_status": "0",
+    "is_optional_state": 0,
+    "message": null,
+    "next_action_email_template": null,
+    "parent": "Asset Repair Workflow - Supervisor Only",
+    "parentfield": "states",
+    "parenttype": "Workflow",
+    "send_email": 1,
+    "state": "Pending Reporter Confirmation",
+    "update_field": null,
+    "update_value": null,
+    "workflow_builder_id": null
    }
   ],
   "transitions": [
@@ -250,11 +266,11 @@
     "workflow_builder_id": null
    },
    {
-    "action": "GM Final Reject",
+    "action": "GM Request Changes",
     "allow_self_approval": 1,
     "allowed": "Maintenance Manager",
     "condition": null,
-    "next_state": "Rejected",
+    "next_state": "Pending Engineering Assessment",
     "parent": "Asset Repair Workflow - Supervisor Only",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -280,7 +296,7 @@
     "allow_self_approval": 1,
     "allowed": "Supervisor",
     "condition": null,
-    "next_state": "Finished",
+    "next_state": "Pending Reporter Confirmation",
     "parent": "Asset Repair Workflow - Supervisor Only",
     "parentfield": "transitions",
     "parenttype": "Workflow",
@@ -293,12 +309,25 @@
     "allow_self_approval": 1,
     "allowed": "Supervisor",
     "condition": null,
-    "next_state": "Rejected",
+    "next_state": "Approved for Repair",
     "parent": "Asset Repair Workflow - Supervisor Only",
     "parentfield": "transitions",
     "parenttype": "Workflow",
     "send_email_to_creator": 0,
     "state": "Pending Supervisor Verification",
+    "workflow_builder_id": null
+   },
+   {
+    "action": "Reporter Confirm",
+    "allow_self_approval": 1,
+    "allowed": "Supervisor",
+    "condition": null,
+    "next_state": "Finished",
+    "parent": "Asset Repair Workflow - Supervisor Only",
+    "parentfield": "transitions",
+    "parenttype": "Workflow",
+    "send_email_to_creator": 0,
+    "state": "Pending Reporter Confirmation",
     "workflow_builder_id": null
    },
    {

@@ -298,10 +298,10 @@ def before_save_asset_repair(doc, method):
         old_doc = frappe.db.get_value("Asset Repair", doc.name,
             ["approval_notes", "approval_signature", "approval_timestamp", "issue_severity", "workflow_state",
              "supervisor_section1_signature", "supervisor_section1_date",
-             "gm_section1_signature", "gm_section1_approval_date",
+             "custom_gm_signature", "gm_section1_signature", "gm_section1_approval_date",
              "engineering_operator_signature", "engineering_operator_sign_date",
              "eng_supervisor_signature", "eng_supervisor_review_date",
-             "approval_signature", "manager_approval_date",
+             "approval_signature", "gm_final_approval_date",
              "supervisor_signature", "supervisor_verification_date",
              "reporter_signature", "reporter_confirmation_date"], as_dict=True)
 
@@ -312,6 +312,10 @@ def before_save_asset_repair(doc, method):
                     doc.supervisor_section1_date = now()
 
             # GM Section 1 - GM signature in Pending GM Approval Section 1
+            # Check for custom_gm_signature (newer field)
+            if doc.get("custom_gm_signature") and not old_doc.get("custom_gm_signature"):
+                if not doc.get("gm_section1_approval_date"):
+                    doc.gm_section1_approval_date = now()
             if doc.get("gm_section1_signature") and not old_doc.get("gm_section1_signature"):
                 if not doc.get("gm_section1_approval_date"):
                     doc.gm_section1_approval_date = now()
@@ -328,8 +332,8 @@ def before_save_asset_repair(doc, method):
 
             # Engineering Section - GM signature in Pending GM Final Approval
             if doc.get("approval_signature") and not old_doc.get("approval_signature"):
-                if not doc.get("manager_approval_date"):
-                    doc.manager_approval_date = now()
+                if not doc.get("gm_final_approval_date"):
+                    doc.gm_final_approval_date = now()
 
             # Section 3B - Supervisor signature in Pending Supervisor Verification
             if doc.get("supervisor_signature") and not old_doc.get("supervisor_signature"):
