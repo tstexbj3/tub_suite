@@ -122,7 +122,6 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
             "repair_subject": repair_subject,
             "repair_type": repair_type,
             "repair_source": "Planned Maintenance (ตามแผน)",
-            "repair_status": "Draft",
             "reported_by": frappe.session.user,
             "reporter_department": user_dept,
             "maintenance_task": task_label

@@ -93,15 +93,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2025-08-09 02:30:38.272214",
-  "name": "Draft",
-  "style": "",
-  "workflow_state_name": "Draft"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2025-08-21 04:03:16.171144",
   "name": "Pending Authorization",
   "style": "",
@@ -183,6 +174,33 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
+  "modified": "2026-01-09 13:32:17.254059",
+  "name": "Pending GM Final Approval",
+  "style": "Primary",
+  "workflow_state_name": "Pending GM Final Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:22.475291",
+  "name": "Repair In Progress",
+  "style": "Primary",
+  "workflow_state_name": "Repair In Progress"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:12.720516",
+  "name": "Pending Engineering Assessment",
+  "style": "Primary",
+  "workflow_state_name": "Pending Engineering Assessment"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
   "modified": "2026-01-09 13:32:10.004989",
   "name": "Pending GM Approval Section 1",
   "style": "Primary",
@@ -201,28 +219,10 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-01-09 13:32:17.254059",
-  "name": "Pending GM Final Approval",
-  "style": "Primary",
-  "workflow_state_name": "Pending GM Final Approval"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2026-01-09 13:32:19.027558",
   "name": "Approved for Repair",
   "style": "Primary",
   "workflow_state_name": "Approved for Repair"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
-  "modified": "2026-01-09 13:32:22.475291",
-  "name": "Repair In Progress",
-  "style": "Primary",
-  "workflow_state_name": "Repair In Progress"
  },
  {
   "docstatus": 0,
@@ -237,9 +237,9 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-01-09 13:32:12.720516",
-  "name": "Pending Engineering Assessment",
-  "style": "Primary",
-  "workflow_state_name": "Pending Engineering Assessment"
+  "modified": "2025-08-09 02:30:38.272214",
+  "name": "Draft",
+  "style": "",
+  "workflow_state_name": "Draft"
  }
 ]
