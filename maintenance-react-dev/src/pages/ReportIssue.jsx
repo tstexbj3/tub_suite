@@ -224,14 +224,8 @@ export default function ReportIssue() {
               required
             >
               <option value="">{i18n.language === 'th' ? '-- เลือก --' : '-- Select --'}</option>
-              <option value="Portal (แจ้งผ่านระบบ)">
-                {i18n.language === 'th' ? 'แจ้งผ่านระบบ' : 'Portal'}
-              </option>
-              <option value="Manual (แจ้งด้วยตนเอง)">
-                {i18n.language === 'th' ? 'แจ้งด้วยตนเอง' : 'Manual'}
-              </option>
-              <option value="Planned Maintenance (ตามแผน)">
-                {i18n.language === 'th' ? 'ตามแผน' : 'Planned Maintenance'}
+              <option value="User Report (ผู้ใช้งานแจ้งซ่อม)">
+                {i18n.language === 'th' ? 'ผู้ใช้งานแจ้งซ่อม' : 'User Report'}
               </option>
             </select>
           </div>
