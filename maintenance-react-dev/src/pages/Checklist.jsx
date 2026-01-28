@@ -286,7 +286,7 @@ export default function Checklist() {
                 >
                 <option value="">-- เลือกประเภทการซ่อม --</option>
                 <option value="ซ่อม (Repair)">ซ่อม (Repair)</option>
-                <option value="แก้ไข (Fix/Correction)">แก้ไข (Fix/Correction)</option>
+                <option value="แก้ไข (Modify)">แก้ไข (Modify)</option>
                 <option value="ติดตั้งใหม่ (New Installation)">ติดตั้งใหม่ (New Installation)</option>
                 <option value="ปรับปรุง (Improvement)">ปรับปรุง (Improvement)</option>
                 </select>
