@@ -1,351 +1,256 @@
-[
- {
-  "docstatus": 0,
-  "doctype": "Workflow",
-  "document_type": "Asset Repair",
-  "is_active": 1,
-  "modified": "2026-01-26 13:37:18.257683",
-  "name": "Asset Repair Workflow - Supervisor Only",
-  "override_status": 0,
-  "send_email_alert": 0,
-  "states": [
-   {
-    "allow_edit": "Supervisor",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Draft",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Maintenance Manager",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Pending GM Approval Section 1",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "All",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Pending Engineering Assessment",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Engineering Supervisor",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Pending Engineering Supervisor Review",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Maintenance Manager",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Pending GM Final Approval",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Engineering Supervisor",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Approved for Repair",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Supervisor",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Pending Supervisor Verification",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Maintenance Manager",
-    "avoid_status_override": 0,
-    "doc_status": "1",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Finished",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "All",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Rejected",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "System Manager",
-    "avoid_status_override": 0,
-    "doc_status": "2",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Cancelled",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   },
-   {
-    "allow_edit": "Supervisor",
-    "avoid_status_override": 0,
-    "doc_status": "0",
-    "is_optional_state": 0,
-    "message": null,
-    "next_action_email_template": null,
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "states",
-    "parenttype": "Workflow",
-    "send_email": 1,
-    "state": "Pending Reporter Confirmation",
-    "update_field": null,
-    "update_value": null,
-    "workflow_builder_id": null
-   }
-  ],
-  "transitions": [
-   {
-    "action": "Supervisor Verify",
-    "allow_self_approval": 1,
-    "allowed": "Supervisor",
-    "condition": null,
-    "next_state": "Pending GM Approval Section 1",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Draft",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Gm Approve Section 1",
-    "allow_self_approval": 1,
-    "allowed": "Maintenance Manager",
-    "condition": null,
-    "next_state": "Pending Engineering Assessment",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending GM Approval Section 1",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "GM Reject",
-    "allow_self_approval": 1,
-    "allowed": "Maintenance Manager",
-    "condition": null,
-    "next_state": "Rejected",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending GM Approval Section 1",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Engineering Assessment Complete",
-    "allow_self_approval": 1,
-    "allowed": "Engineering Team",
-    "condition": null,
-    "next_state": "Pending Engineering Supervisor Review",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending Engineering Assessment",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Supervisor Review Complete",
-    "allow_self_approval": 1,
-    "allowed": "Engineering Supervisor",
-    "condition": null,
-    "next_state": "Pending GM Final Approval",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending Engineering Supervisor Review",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "GM Final Approve",
-    "allow_self_approval": 1,
-    "allowed": "Maintenance Manager",
-    "condition": null,
-    "next_state": "Approved for Repair",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending GM Final Approval",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "GM Request Changes",
-    "allow_self_approval": 1,
-    "allowed": "Maintenance Manager",
-    "condition": null,
-    "next_state": "Pending Engineering Assessment",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending GM Final Approval",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Finish Repair",
-    "allow_self_approval": 1,
-    "allowed": "Engineering Supervisor",
-    "condition": null,
-    "next_state": "Pending Supervisor Verification",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Approved for Repair",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Supervisor Verify",
-    "allow_self_approval": 1,
-    "allowed": "Supervisor",
-    "condition": null,
-    "next_state": "Pending Reporter Confirmation",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending Supervisor Verification",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Supervisor Reject",
-    "allow_self_approval": 1,
-    "allowed": "Supervisor",
-    "condition": null,
-    "next_state": "Approved for Repair",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending Supervisor Verification",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Reporter Confirm",
-    "allow_self_approval": 1,
-    "allowed": "Supervisor",
-    "condition": null,
-    "next_state": "Finished",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Pending Reporter Confirmation",
-    "workflow_builder_id": null
-   },
-   {
-    "action": "Cancel",
-    "allow_self_approval": 1,
-    "allowed": "System Manager",
-    "condition": null,
-    "next_state": "Cancelled",
-    "parent": "Asset Repair Workflow - Supervisor Only",
-    "parentfield": "transitions",
-    "parenttype": "Workflow",
-    "send_email_to_creator": 0,
-    "state": "Finished",
-    "workflow_builder_id": null
-   }
-  ],
-  "workflow_data": null,
-  "workflow_name": "Asset Repair Workflow - Supervisor Only",
-  "workflow_state_field": "workflow_state"
- }
-]
+{
+ "creation": "2026-01-27 21:45:01.795942",
+ "docstatus": 0,
+ "doctype": "Workflow",
+ "document_type": "Asset Repair",
+ "idx": 0,
+ "is_active": 1,
+ "modified": "2026-01-28 17:24:07.742430",
+ "modified_by": "Administrator",
+ "name": "Asset Repair Workflow - Supervisor Only",
+ "override_status": 0,
+ "owner": "Administrator",
+ "send_email_alert": 0,
+ "states": [
+  {
+   "allow_edit": "Supervisor",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Draft"
+  },
+  {
+   "allow_edit": "Maintenance Manager",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending GM Approval Section 1"
+  },
+  {
+   "allow_edit": "All",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending Engineering Assessment"
+  },
+  {
+   "allow_edit": "Engineering Supervisor",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending Engineering Supervisor Review"
+  },
+  {
+   "allow_edit": "Maintenance Manager",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending GM Final Approval"
+  },
+  {
+   "allow_edit": "Engineering Supervisor",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Approved for Repair"
+  },
+  {
+   "allow_edit": "Supervisor",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending Supervisor Verification"
+  },
+  {
+   "allow_edit": "Maintenance Manager",
+   "avoid_status_override": 0,
+   "doc_status": "1",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Finished"
+  },
+  {
+   "allow_edit": "All",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Rejected"
+  },
+  {
+   "allow_edit": "System Manager",
+   "avoid_status_override": 0,
+   "doc_status": "2",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Cancelled"
+  },
+  {
+   "allow_edit": "Supervisor",
+   "avoid_status_override": 0,
+   "doc_status": "0",
+   "is_optional_state": 0,
+   "send_email": 1,
+   "state": "Pending Reporter Confirmation"
+  }
+ ],
+ "transitions": [
+  {
+   "action": "Supervisor Verify",
+   "allow_self_approval": 1,
+   "allowed": "Supervisor",
+   "next_state": "Pending GM Approval Section 1",
+   "send_email_to_creator": 0,
+   "state": "Draft"
+  },
+  {
+   "action": "Gm Approve Section 1",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Manager",
+   "next_state": "Pending Engineering Assessment",
+   "send_email_to_creator": 0,
+   "state": "Pending GM Approval Section 1"
+  },
+  {
+   "action": "GM Reject",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Manager",
+   "next_state": "Rejected",
+   "send_email_to_creator": 0,
+   "state": "Pending GM Approval Section 1"
+  },
+  {
+   "action": "Engineering Assessment Complete",
+   "allow_self_approval": 1,
+   "allowed": "Engineering Team",
+   "next_state": "Pending Engineering Supervisor Review",
+   "send_email_to_creator": 0,
+   "state": "Pending Engineering Assessment"
+  },
+  {
+   "action": "Supervisor Review Complete",
+   "allow_self_approval": 1,
+   "allowed": "Engineering Supervisor",
+   "next_state": "Pending GM Final Approval",
+   "send_email_to_creator": 0,
+   "state": "Pending Engineering Supervisor Review"
+  },
+  {
+   "action": "GM Final Approve",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Manager",
+   "next_state": "Approved for Repair",
+   "send_email_to_creator": 0,
+   "state": "Pending GM Final Approval"
+  },
+  {
+   "action": "GM Request Changes",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Manager",
+   "next_state": "Pending Engineering Assessment",
+   "send_email_to_creator": 0,
+   "state": "Pending GM Final Approval"
+  },
+  {
+   "action": "Finish Repair",
+   "allow_self_approval": 1,
+   "allowed": "Engineering Supervisor",
+   "next_state": "Pending Supervisor Verification",
+   "send_email_to_creator": 0,
+   "state": "Approved for Repair"
+  },
+  {
+   "action": "Supervisor Verify",
+   "allow_self_approval": 1,
+   "allowed": "Supervisor",
+   "condition": "doc.repair_source != \"Planned Maintenance (\u0e15\u0e32\u0e21\u0e41\u0e1c\u0e19)\"",
+   "next_state": "Pending Reporter Confirmation",
+   "send_email_to_creator": 0,
+   "state": "Pending Supervisor Verification"
+  },
+  {
+   "action": "Supervisor Reject",
+   "allow_self_approval": 1,
+   "allowed": "Supervisor",
+   "condition": "doc.repair_source != \"Planned Maintenance (\u0e15\u0e32\u0e21\u0e41\u0e1c\u0e19)\"",
+   "next_state": "Approved for Repair",
+   "send_email_to_creator": 0,
+   "state": "Pending Supervisor Verification"
+  },
+  {
+   "action": "PM Supervisor Verify",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Supervisor",
+   "condition": "doc.repair_source == \"Planned Maintenance (\u0e15\u0e32\u0e21\u0e41\u0e1c\u0e19)\"",
+   "next_state": "Pending Reporter Confirmation",
+   "send_email_to_creator": 0,
+   "state": "Pending Supervisor Verification"
+  },
+  {
+   "action": "PM Supervisor Reject",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Supervisor",
+   "condition": "doc.repair_source == \"Planned Maintenance (\u0e15\u0e32\u0e21\u0e41\u0e1c\u0e19)\"",
+   "next_state": "Approved for Repair",
+   "send_email_to_creator": 0,
+   "state": "Pending Supervisor Verification"
+  },
+  {
+   "action": "Reporter Confirm",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance User",
+   "next_state": "Finished",
+   "send_email_to_creator": 0,
+   "state": "Pending Reporter Confirmation"
+  },
+  {
+   "action": "Reporter Confirm",
+   "allow_self_approval": 1,
+   "allowed": "Supervisor",
+   "next_state": "Finished",
+   "send_email_to_creator": 0,
+   "state": "Pending Reporter Confirmation"
+  },
+  {
+   "action": "Reporter Confirm",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Supervisor",
+   "next_state": "Finished",
+   "send_email_to_creator": 0,
+   "state": "Pending Reporter Confirmation"
+  },
+  {
+   "action": "Cancel",
+   "allow_self_approval": 1,
+   "allowed": "System Manager",
+   "next_state": "Cancelled",
+   "send_email_to_creator": 0,
+   "state": "Finished"
+  },
+  {
+   "action": "Supervisor Verify",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Supervisor",
+   "next_state": "Pending Reporter Confirmation",
+   "send_email_to_creator": 0,
+   "state": "Pending Supervisor Verification"
+  },
+  {
+   "action": "Supervisor Reject",
+   "allow_self_approval": 1,
+   "allowed": "Maintenance Supervisor",
+   "next_state": "Approved for Repair",
+   "send_email_to_creator": 0,
+   "state": "Pending Supervisor Verification"
+  }
+ ],
+ "workflow_name": "Asset Repair Workflow - Supervisor Only",
+ "workflow_state_field": "workflow_state"
+}
