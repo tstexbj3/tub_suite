@@ -7,8 +7,24 @@ app_license = "mit"
 
 # Fixtures - for easy migration to production
 # ------------
-# These fixtures will be auto-installed when running 'bench migrate'
+# IMPORT MODE: These fixtures will be IMPORTED during 'bench migrate'
+# The fixture files in tub_suite/fixtures/ will be applied to the database
 fixtures = [
+    "fixtures/custom_field.json",
+    "fixtures/property_setter.json",
+    "fixtures/workflow.json",
+    "fixtures/workflow_state.json",
+    "fixtures/workflow_action_master.json",
+    "fixtures/role.json",
+    "fixtures/doctype.json",
+    "fixtures/notification.json",
+    "fixtures/print_format.json"
+]
+
+# Export fixtures configuration
+# When you run: bench --site SITE export-fixtures
+# It will use the filters below to export FROM database TO fixture files
+export_fixtures = [
     {
         "dt": "Custom Field",
         "filters": [["dt", "in", ["Asset Repair", "Asset", "Asset Maintenance"]]]
@@ -34,13 +50,12 @@ fixtures = [
     {
         "dt": "Notification",
         "filters": [["is_standard", "=", 0]]  # Only custom notifications
+    },
+    {
+        "dt": "Print Format",
+        "filters": [["name", "=", "FM-EN-04"]]  # Asset Repair print format
     }
 ]
-
-# Export fixtures configuration
-# When you run: bench --site SITE export-fixtures
-# It will use the filters above
-export_fixtures = fixtures
 
 # Scheduled Tasks
 # ---------------

@@ -123,11 +123,16 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
             "repair_type": repair_type,
             "repair_source": "Planned Maintenance (ตามแผน)",
             "reported_by": frappe.session.user,
-            "reporter_department": user_dept,
+            "reporter_department": "Maintenance Department",
             "maintenance_task": task_label
         })
         repair.insert(ignore_permissions=True)
         repair_name = repair.name
+
+        # Set first issue photo to issue_photos field
+        if issue_photos and len(issue_photos) > 0:
+            repair.issue_photos = issue_photos[0]
+            repair.save(ignore_permissions=True)
 
         # Attach issue photos to repair request
         for idx, photo_url in enumerate(issue_photos):
@@ -795,19 +800,38 @@ def verify_repair_completion(repair_name, verification_photos=None, verification
 @frappe.whitelist()
 def get_repairs_needing_verification():
     """
-    Get repairs that are finished and need verification by the logged-in user
+    Get repairs that need supervisor verification by the logged-in supervisor
     Returns repairs where:
     - workflow_state = "Pending Supervisor Verification"
-    - reported_by = current user
+    - current user has Supervisor or Maintenance Supervisor role
+    - filters by repair_source based on supervisor type
 
-    Used by mobile portal to show pending verifications to original reporters
+    Used by mobile portal to show pending verifications to supervisors
     """
     try:
+        # Check if current user is a supervisor
+        user_roles = frappe.get_roles()
+        is_regular_supervisor = "Supervisor" in user_roles
+        is_maintenance_supervisor = "Maintenance Supervisor" in user_roles
+
+        if not is_regular_supervisor and not is_maintenance_supervisor:
+            return []  # Not a supervisor, return empty
+
+        # Build filters based on supervisor type
+        filters = {
+            "workflow_state": "Pending Supervisor Verification"
+        }
+
+        # Filter by repair source based on supervisor type
+        if is_regular_supervisor and not is_maintenance_supervisor:
+            # Regular Supervisor can only verify Portal repairs
+            filters["repair_source"] = "Portal (แจ้งผ่านระบบ)"
+        elif is_maintenance_supervisor:
+            # Maintenance Supervisor can only verify PM repairs
+            filters["repair_source"] = "Planned Maintenance (ตามแผน)"
+
         repairs = frappe.get_all("Asset Repair",
-            filters={
-                "workflow_state": "Pending Supervisor Verification",
-                "reported_by": frappe.session.user
-            },
+            filters=filters,
             fields=[
                 "name", "asset", "description", "failure_date",
                 "workflow_state", "verification_status", "reported_by",
