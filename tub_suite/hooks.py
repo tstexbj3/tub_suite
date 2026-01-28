@@ -41,7 +41,14 @@ export_fixtures = [
     {"dt": "Workflow Action Master"},
     {
         "dt": "Role",
-        "filters": [["name", "in", ["Maintenance Inspector", "Maintenance Engineer"]]]
+        "filters": [["name", "in", [
+            "Maintenance Inspector",
+            "Maintenance Engineer",
+            "Supervisor",
+            "Maintenance Supervisor",
+            "Engineering Supervisor",
+            "Engineering Team"
+        ]]]
     },
     {
         "dt": "DocType",

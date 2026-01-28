@@ -1,1 +1,61 @@
-[]
+[
+{
+ "creation": "2026-01-09 14:07:34.873553",
+ "desk_access": 1,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Role",
+ "idx": 0,
+ "is_custom": 0,
+ "modified": "2026-01-09 14:07:34.873553",
+ "modified_by": "Administrator",
+ "name": "Supervisor",
+ "owner": "Administrator",
+ "role_name": "Supervisor",
+ "two_factor_auth": 0
+},
+{
+ "creation": "2026-01-22 14:55:25.185138",
+ "desk_access": 1,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Role",
+ "idx": 0,
+ "is_custom": 0,
+ "modified": "2026-01-22 14:55:25.185138",
+ "modified_by": "Administrator",
+ "name": "Maintenance Supervisor",
+ "owner": "Administrator",
+ "role_name": "Maintenance Supervisor",
+ "two_factor_auth": 0
+},
+{
+ "creation": "2026-01-09 17:58:49.908002",
+ "desk_access": 1,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Role",
+ "idx": 0,
+ "is_custom": 0,
+ "modified": "2026-01-09 17:58:49.908002",
+ "modified_by": "Administrator",
+ "name": "Engineering Supervisor",
+ "owner": "Administrator",
+ "role_name": "Engineering Supervisor",
+ "two_factor_auth": 0
+},
+{
+ "creation": "2026-01-09 13:04:02.750313",
+ "desk_access": 1,
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Role",
+ "idx": 0,
+ "is_custom": 0,
+ "modified": "2025-08-18 20:53:56.195196",
+ "modified_by": "Administrator",
+ "name": "Engineering Team",
+ "owner": "Administrator",
+ "role_name": "Engineering Team",
+ "two_factor_auth": 0
+}]
