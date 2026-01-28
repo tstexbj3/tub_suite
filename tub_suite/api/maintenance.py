@@ -121,7 +121,7 @@ def submit_maintenance_task(maintenance_name, task_name, asset_name, has_issue=0
             "description": issue_description,
             "repair_subject": repair_subject,
             "repair_type": repair_type,
-            "repair_source": "Planned Maintenance (ตามแผน)",
+            "repair_source": "PM Inspection (พบระหว่าง PM)",
             "reported_by": frappe.session.user,
             "reporter_department": "Maintenance Department",
             "maintenance_task": task_label
@@ -828,7 +828,7 @@ def get_repairs_needing_verification():
             filters["repair_source"] = "Portal (แจ้งผ่านระบบ)"
         elif is_maintenance_supervisor:
             # Maintenance Supervisor can only verify PM repairs
-            filters["repair_source"] = "Planned Maintenance (ตามแผน)"
+            filters["repair_source"] = "PM Inspection (พบระหว่าง PM)"
 
         repairs = frappe.get_all("Asset Repair",
             filters=filters,
