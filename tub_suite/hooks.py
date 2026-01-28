@@ -18,7 +18,8 @@ fixtures = [
     "fixtures/role.json",
     "fixtures/doctype.json",
     "fixtures/notification.json",
-    "fixtures/print_format.json"
+    "fixtures/print_format.json",
+    "fixtures/custom_docperm.json"
 ]
 
 # Export fixtures configuration
@@ -61,6 +62,17 @@ export_fixtures = [
     {
         "dt": "Print Format",
         "filters": [["name", "=", "FM-EN-04"]]  # Asset Repair print format
+    },
+    {
+        "dt": "Custom DocPerm",
+        "filters": [["role", "in", [
+            "Maintenance User",
+            "Supervisor",
+            "Maintenance Supervisor",
+            "Maintenance Manager",
+            "Engineering Supervisor",
+            "Engineering Team"
+        ]]]
     }
 ]
 
