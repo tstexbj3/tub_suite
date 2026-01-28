@@ -10,16 +10,16 @@ app_license = "mit"
 # IMPORT MODE: These fixtures will be IMPORTED during 'bench migrate'
 # The fixture files in tub_suite/fixtures/ will be applied to the database
 fixtures = [
-    "fixtures/custom_field.json",
-    "fixtures/property_setter.json",
-    "fixtures/workflow.json",
-    "fixtures/workflow_state.json",
-    "fixtures/workflow_action_master.json",
-    "fixtures/role.json",
-    "fixtures/doctype.json",
-    "fixtures/notification.json",
-    "fixtures/print_format.json",
-    "fixtures/custom_docperm.json"
+    {"dt": "Custom Field", "filters": [["dt", "in", ["Asset Repair", "Asset", "Asset Maintenance"]]]},
+    {"dt": "Property Setter", "filters": [["doc_type", "in", ["Asset Repair", "Asset", "Asset Maintenance"]]]},
+    {"dt": "Workflow", "filters": [["document_type", "=", "Asset Repair"]]},
+    {"dt": "Workflow State"},
+    {"dt": "Workflow Action Master"},
+    {"dt": "Role", "filters": [["name", "in", ["Maintenance Inspector", "Maintenance Engineer", "Supervisor", "Maintenance Supervisor", "Engineering Supervisor", "Engineering Team"]]]},
+    {"dt": "DocType", "filters": [["name", "in", ["Asset Repair Engineering Detail"]]]},
+    {"dt": "Notification", "filters": [["is_standard", "=", 0]]},
+    {"dt": "Print Format", "filters": [["name", "=", "FM-EN-04"]]},
+    {"dt": "Custom DocPerm", "filters": [["role", "in", ["Maintenance User", "Supervisor", "Maintenance Supervisor", "Maintenance Manager", "Engineering Supervisor", "Engineering Team"]]]}
 ]
 
 # Export fixtures configuration
