@@ -45,7 +45,7 @@
   "property": "read_only_depends_on",
   "property_type": "Data",
   "row_name": null,
-  "value": "eval:doc.workflow_state!=\"Draft\""
+  "value": "eval:!doc.__islocal"
  },
  {
   "default_value": null,

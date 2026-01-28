@@ -138,5 +138,19 @@
   "modified": "2026-01-22 14:07:12.335865",
   "name": "GM Request Changes",
   "workflow_action_name": "GM Request Changes"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-27 18:52:00.000000",
+  "name": "PM Supervisor Verify",
+  "workflow_action_name": "PM Supervisor Verify"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-27 18:52:00.000000",
+  "name": "PM Supervisor Reject",
+  "workflow_action_name": "PM Supervisor Reject"
  }
 ]

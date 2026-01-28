@@ -53,7 +53,8 @@
     "allow_on_submit": 1,
     "in_list_view": 1,
     "bold": 1,
-    "description": "Type of repair work being performed"
+    "description": "Type of repair work being performed",
+    "hidden": 1
   },
   {
     "doctype": "Custom Field",
@@ -103,7 +104,7 @@
     "fieldtype": "Section Break",
     "label": "ฝ่ายวิศวกรรม",
     "insert_after": "total_repair_cost",
-    "collapsible": 1
+    "collapsible": 1, "hidden": 1
   },
   {
     "doctype": "Custom Field",
@@ -115,7 +116,7 @@
     "options": "Asset Repair Engineering Detail",
     "insert_after": "custom_ฝายวศวกรรม",
     "allow_on_submit": 1,
-    "description": "Engineering action items and checklist"
+    "description": "Engineering action items and checklist", "hidden": 1
   },
   {
     "doctype": "Custom Field",
@@ -137,7 +138,7 @@
     "fieldtype": "Section Break",
     "label": "Inspector Verification",
     "insert_after": "custom_ใบสงของเลขท",
-    "collapsible": 1
+    "collapsible": 1, "hidden": 1
   },
   {
     "doctype": "Custom Field",
