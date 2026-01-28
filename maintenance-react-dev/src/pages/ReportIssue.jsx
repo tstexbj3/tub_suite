@@ -251,8 +251,6 @@ export default function ReportIssue() {
               <option value="แก้ไข (Fix/Correction)">{i18n.language === 'th' ? 'แก้ไข' : 'Fix/Correction'}</option>
               <option value="ติดตั้งใหม่ (New Installation)">{i18n.language === 'th' ? 'ติดตั้งใหม่' : 'New Installation'}</option>
               <option value="ปรับปรุง (Improvement)">{i18n.language === 'th' ? 'ปรับปรุง' : 'Improvement'}</option>
-              <option value="ซ่อมบำรุงตามแผน (Planned Maintenance)">{i18n.language === 'th' ? 'ซ่อมบำรุงตามแผน' : 'Planned Maintenance'}</option>
-              <option value="อื่นๆ (Other)">{i18n.language === 'th' ? 'อื่นๆ' : 'Other'}</option>
             </select>
           </div>
         </div>

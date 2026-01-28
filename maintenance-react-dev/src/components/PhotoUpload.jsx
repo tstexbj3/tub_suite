@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { addTimestampToPhoto, uploadPhoto } from '../services/photoService'
 
-export default function PhotoUpload({ photos, setPhotos, activityType, assetName }) {
+export default function PhotoUpload({ photos, setPhotos, activityType, assetName, maxPhotos = 5 }) {
   const { t } = useTranslation()
 
   const handlePhotoCapture = async (e) => {
-    if (photos.length >= 5) {
+    if (photos.length >= maxPhotos) {
       alert(t('max_photos'))
       return
     }
@@ -34,10 +34,10 @@ export default function PhotoUpload({ photos, setPhotos, activityType, assetName
         accept="image/*" 
         capture="environment"
         onChange={handlePhotoCapture}
-        disabled={photos.length >= 5}
+        disabled={photos.length >= maxPhotos}
       />
       
-      <p>{photos.length} / 5 {t('inspection_photos')}</p>
+      <p>{photos.length} / {maxPhotos} {t('inspection_photos')}</p>
       
       <div className="photo-grid">
         {photos.map((url, index) => (

@@ -289,8 +289,6 @@ export default function Checklist() {
                 <option value="แก้ไข (Fix/Correction)">แก้ไข (Fix/Correction)</option>
                 <option value="ติดตั้งใหม่ (New Installation)">ติดตั้งใหม่ (New Installation)</option>
                 <option value="ปรับปรุง (Improvement)">ปรับปรุง (Improvement)</option>
-                <option value="ซ่อมบำรุงตามแผน (Planned Maintenance)">ซ่อมบำรุงตามแผน (Planned Maintenance)</option>
-                <option value="อื่นๆ (Other)">อื่นๆ (Other)</option>
                 </select>
               </div>
             </>
