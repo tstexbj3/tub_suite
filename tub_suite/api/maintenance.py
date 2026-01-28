@@ -283,16 +283,11 @@ def create_operator_repair_request(asset_name, repair_subject, repair_source, re
         repair.insert(ignore_permissions=True)
         frappe.logger().info(f"After insert: repair_type='{repair.repair_type}'")
 
-        # Set photo field values and attach files
+        # Set photo field values directly without triggering validation
         if len(issue_photos) > 0:
-            repair.issue_photos = issue_photos[0]
+            repair.db_set("issue_photos", issue_photos[0], update_modified=False)
         if len(issue_photos) > 1:
-            repair.issue_photos_2 = issue_photos[1]
-
-        # Save field values
-        if len(issue_photos) > 0:
-            repair.save(ignore_permissions=True)
-            frappe.logger().info(f"After save: repair_type='{repair.repair_type}'")
+            repair.db_set("issue_photos_2", issue_photos[1], update_modified=False)
 
         # Attach issue photos
         for idx, photo_url in enumerate(issue_photos, start=1):
