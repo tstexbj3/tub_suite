@@ -7,14 +7,17 @@ via fixtures due to timestamp conflicts.
 Fields updated:
 - final_remarks: Only show in Finished state
 - section_3b_break: Show in Pending Supervisor Verification and Finished states
+- received_by: Hide completely (legacy field)
+- received_date: Hide completely (legacy field)
 """
 
 import frappe
 
 
 def execute():
-    """Update Custom Field depends_on values"""
+    """Update Custom Field depends_on values and hide legacy fields"""
 
+    # Update depends_on conditions
     updates = [
         {
             "name": "Asset Repair-final_remarks",
@@ -37,6 +40,19 @@ def execute():
             print(f"✓ Updated {field_data['label']}")
         else:
             print(f"⚠ Custom Field {field_data['name']} not found")
+
+    # Hide legacy fields
+    legacy_fields = ["received_by", "received_date"]
+    for fieldname in legacy_fields:
+        field_name = f"Asset Repair-{fieldname}"
+        if frappe.db.exists("Custom Field", field_name):
+            doc = frappe.get_doc("Custom Field", field_name)
+            doc.hidden = 1
+            doc.flags.ignore_validate = True
+            doc.save(ignore_permissions=True)
+            print(f"✓ Hidden {fieldname}")
+        else:
+            print(f"⚠ Custom Field {field_name} not found")
 
     frappe.db.commit()
     print("✓ Asset Repair field visibility updated successfully")
