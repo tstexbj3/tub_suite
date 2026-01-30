@@ -228,5 +228,15 @@ Document for reference when working on field visibility:
 
 ---
 
-**Last Updated**: 2026-01-30 (v2.1.12)
-**Next Session TODO**: Read this file FIRST, then DEPLOYMENT_PROCEDURES.md BEFORE making ANY changes
+**Last Updated**: 2026-01-30 (v2.1.15)
+
+## READ FIRST IN EVERY SESSION
+
+1. **THIS FILE** - Quick overview and critical lessons
+2. **COMPLETE_DEPLOYMENT_HISTORY.md** - Full detailed history of all fixes
+3. **DEPLOYMENT_PROCEDURES.md** - Step-by-step deployment procedures
+
+**Next Session TODO**:
+- Run comparison tool to verify production matches DEV
+- Check if custom_docperm.json issue is fixed on DEV
+- Consider updating Repair Spare Part JSON to make item_code optional
