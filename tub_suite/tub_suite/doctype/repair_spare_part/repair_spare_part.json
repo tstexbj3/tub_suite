@@ -21,25 +21,21 @@
   {
    "fieldname": "item_no",
    "fieldtype": "Int",
-   "in_list_view": 1,
    "label": "Item No (\u0e25\u0e33\u0e14\u0e31\u0e1a)",
    "width": "60px"
   },
   {
    "fieldname": "item_code",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Item Code (\u0e23\u0e2b\u0e31\u0e2a\u0e2d\u0e30\u0e44\u0e2b\u0e25\u0e48)",
    "options": "Item",
    "reqd": 1
   },
   {
-   "fetch_from": "item_code.item_name",
    "fieldname": "item_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Item Name (\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23)",
-   "read_only": 1
+   "label": "Item Name (\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23)"
   },
   {
    "fieldname": "column_break_1",
