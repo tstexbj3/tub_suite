@@ -49,9 +49,16 @@ def sync_fixture_file(filename, doctype_name):
             # Update existing record
             doc = frappe.get_doc(doctype_name, record_name)
 
-            # Update ALL fields from fixture (except system fields)
+            # Get meta to check field types
+            meta = frappe.get_meta(doctype_name)
+
+            # Update ALL fields from fixture (except system fields and child tables)
             for key, value in record.items():
                 if key not in ["doctype", "name", "modified", "modified_by", "creation", "owner", "docstatus"]:
+                    # Skip child table fields (they're complex and need special handling)
+                    field_df = meta.get_field(key)
+                    if field_df and field_df.fieldtype in ["Table", "Table MultiSelect"]:
+                        continue
                     setattr(doc, key, value)
 
             doc.flags.ignore_validate = True
