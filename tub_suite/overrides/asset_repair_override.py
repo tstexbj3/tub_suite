@@ -206,8 +206,9 @@ def validate_asset_repair(doc, method):
             else:
                 frappe.throw(_("Maintenance Supervisor can only verify Planned Maintenance repairs."))
         
-        if is_original_reporter or is_manager:
-            return  # Allow reporter and managers for all repair sources
+        # Allow reporter, managers, and Engineering Supervisor (for transitioning from Approved for Repair)
+        if is_original_reporter or is_manager or is_eng_supervisor:
+            return  # Allow reporter, managers, and Engineering Supervisor
 
         # Block everyone else
         frappe.throw(_("You do not have permission to edit this repair."))
