@@ -173,11 +173,18 @@ def validate_asset_repair(doc, method):
     is_pm_repair = repair_source == "Planned Maintenance (ตามแผน)"
 
     # CRITICAL: Allow Draft/new documents - block ONLY Regular Supervisor from PM repairs
-    if not check_state or check_state == "Draft" or check_state == "Approved for Repair":
+    if not check_state or check_state == "Draft":
         # Block Regular Supervisor (not Maintenance Supervisor) from editing PM repairs
         if is_regular_supervisor and not is_maintenance_supervisor and is_pm_repair:
             frappe.throw(_("Only Maintenance Supervisor can edit PM repairs"))
         return  # Allow everyone else
+
+    # Approved for Repair - ONLY Engineering Supervisor can edit
+    if check_state == "Approved for Repair":
+        if is_eng_supervisor:
+            return  # Allow Engineering Supervisor ONLY
+        else:
+            frappe.throw(_("Only Engineering Supervisor can edit in Approved for Repair state"))
 
     # Special case: Pending Supervisor Verification - only reporter OR managers OR supervisors can edit
     if check_state == "Pending Supervisor Verification":
