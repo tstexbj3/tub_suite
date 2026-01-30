@@ -222,12 +222,12 @@ def validate_asset_repair(doc, method):
         else:
             frappe.throw(_("Only Engineering Team can edit in Pending Engineering Assessment state"))
 
-    # Pending Engineering Supervisor Review - ONLY Engineering Supervisor can edit
+    # Pending Engineering Supervisor Review - Engineering Supervisor and Engineering Team can edit
     if check_state == "Pending Engineering Supervisor Review":
-        if is_eng_supervisor:
-            return  # Allow Engineering Supervisor ONLY
+        if is_eng_supervisor or is_engineer:
+            return  # Allow Engineering Supervisor and Engineering Team
         else:
-            frappe.throw(_("Only Engineering Supervisor can edit in Pending Engineering Supervisor Review state"))
+            frappe.throw(_("Only Engineering Supervisor or Engineering Team can edit in Pending Engineering Supervisor Review state"))
 
     # Pending GM Final Approval - ONLY GM/Managers can edit
     if check_state == "Pending GM Final Approval":
