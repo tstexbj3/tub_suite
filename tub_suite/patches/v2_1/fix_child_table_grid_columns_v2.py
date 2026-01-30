@@ -1,47 +1,35 @@
 """
-Fix child table grid column visibility for Asset Repair child DocTypes.
+Fix child table grid columns - ALL tables should show 2 columns (item_name, qty).
 
-This patch updates in_list_view property for fields in:
-- Repair Spare Part
-- Parts Inserted Item
-- Parts Removed Item
-- Engineering Todo Item
-
-Background:
-- Frappe fixtures don't update existing DocType field properties
-- JSON files may have been updated but database not synced
-- This ensures production matches intended configuration
+v2: Corrected configuration - Parts Inserted and Parts Removed should have 2 columns, not 3.
+Original patch had wrong configuration (showed item_code which should be hidden).
 """
 
 import frappe
 
 
 def execute():
-    """Update in_list_view for child table fields."""
+    """Update in_list_view for child table fields - ALL show 2 columns."""
 
-    # Configuration: {DocType: {fieldname: in_list_view}}
+    # CORRECT Configuration: ALL 3 parts tables show 2 columns (item_name, qty)
     field_configs = {
         "Repair Spare Part": {
-            # Only show: Item Name (manual entry) and Quantity
             "item_no": 0,
             "item_code": 0,
             "item_name": 1,
             "qty": 1
         },
         "Parts Inserted Item": {
-            # Show: Item Name and Quantity (2 columns like Spare Parts)
-            "item_code": 0,
+            "item_code": 0,  # HIDE item_code
             "item_name": 1,
             "qty": 1
         },
         "Parts Removed Item": {
-            # Show: Item Name and Quantity (2 columns like Spare Parts)
-            "item_code": 0,
+            "item_code": 0,  # HIDE item_code
             "item_name": 1,
             "qty": 1
         },
         "Engineering Todo Item": {
-            # Show all fields: Item No, Todo, Procedure, Person, Status
             "item_no": 1,
             "todo_item": 1,
             "procedure": 1,
@@ -55,16 +43,7 @@ def execute():
             print(f"DocType {doctype_name} not found, skipping...")
             continue
 
-        # Get DocType meta
-        meta = frappe.get_meta(doctype_name)
-
         for fieldname, in_list_view_value in field_settings.items():
-            # Find field in meta
-            field = meta.get_field(fieldname)
-            if not field:
-                print(f"Field {fieldname} not found in {doctype_name}, skipping...")
-                continue
-
             # Update in_list_view in database
             frappe.db.sql("""
                 UPDATE `tabDocField`
@@ -82,4 +61,4 @@ def execute():
     for doctype_name in field_configs.keys():
         frappe.clear_cache(doctype=doctype_name)
 
-    print("Child table grid column fix completed")
+    print("✅ Child table grid columns fixed - ALL parts tables now show 2 columns")
