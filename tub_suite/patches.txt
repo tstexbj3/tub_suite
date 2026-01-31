@@ -6,4 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 tub_suite.patches.create_asset_repair_workflow_states
 tub_suite.patches.v2_1.force_sync_critical_fixtures
-tub_suite.patches.v2_1.fix_child_table_grid_columns #v2.1.12 - Fix child table grid columns visibility
+tub_suite.patches.v2_1.fix_child_table_grid_columns #v2.1.12 - Fix child table grid columns visibilitytub_suite.patches.v2_1.mega_sync_all_config #v2.1.19 - Mega-sync ALL Asset Repair config from DEV to PROD
