@@ -149,7 +149,11 @@ def validate_asset_repair(doc, method):
     # For workflow transitions, check OLD state to validate who can perform the action
     old_workflow_state = None
     if not doc.is_new():
-        old_workflow_state = frappe.db.get_value("Asset Repair", doc.name, "workflow_state")
+        # Use stored old state from before_save if available (during workflow transitions)
+        old_workflow_state = getattr(doc, '_old_workflow_state', None)
+        if old_workflow_state is None:
+            # Fallback to DB query if not stored (shouldn't happen normally)
+            old_workflow_state = frappe.db.get_value("Asset Repair", doc.name, "workflow_state")
 
     # Use old state for permission checks if it exists (during transitions)
     check_state = workflow_state  # FIXED 2026-01-27
