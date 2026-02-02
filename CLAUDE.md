@@ -456,3 +456,12 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 - Child table columns remain visible ✅
 - Signature field visibility persists ✅
 - No more reset loops from mega_sync ✅
+
+### 2026-02-02 20:50 — Step 8: Fix DEV database workflow duplicates
+- Did: Ran Python script in bench console to remove duplicate unconditional transitions from DEV DB
+- Result: ✅ Removed 2 transitions:
+  - "Supervisor Verify" by Maintenance Supervisor (no condition)
+  - "Supervisor Reject" by Maintenance Supervisor (no condition)
+- Verification: No Maintenance Supervisor transitions with condition=NONE remain for "Pending Supervisor Verification" state
+- Reason: workflow.json in fixtures was already fixed (Step 6), but DEV DB still had old duplicates. Now DB matches fixture.
+- Next: User deploys to PROD
