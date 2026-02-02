@@ -1,281 +1,283 @@
-# TUB Suite - Asset Repair Deployment Fix
+# TUB Suite - CORRECTED Deployment Approach
 
 ## CRITICAL CONTEXT FOR CLAUDE CODE
 
-### The Problem
-DEV environment (site: `tub`) is fully working with all Asset Repair features configured correctly.
-PROD environment (site: `tub.x-desk.tech`) has the EXACT SAME CODE but NOTHING WORKS.
+### READ THIS FIRST - LESSONS LEARNED THE HARD WAY
 
-**Root Cause:** Frappe fixtures only CREATE new records, they DON'T UPDATE existing ones. PROD database has old/wrong configuration values that fixtures can't fix.
+**DO NOT** create patches that bake in configuration values and add them to patches.txt.
+The v2.1.19 mega_sync_all_config patch did exactly this and CAUSED the problems:
+- It ran on migrate with OLD config values
+- Every new fix (v2.1.24-v2.1.28) was undone on the next migrate
+- This created an infinite loop: fix → migrate → reset → fix → migrate → reset
 
 ### Sites
-- **DEV site:** `tub`
-- **PROD site:** `tub.x-desk.tech`
+- **DEV site:** `tub` (local WSL)
+- **PROD site:** `tub.x-desk.tech` (DigitalOcean VPS)
 - **App:** `tub_suite`
-- **Bench path:** `~/frappe-bench`
+- **DEV bench path:** `~/frappe-bench` (WSL)
+- **PROD bench path:** `/home/taynaja/frappe-bench` (VPS)
+- **Branch:** `v2.1.0`
+- **Repo:** `https://github.com/tstexbj3/tub_suite.git`
 
-### What Needs to Happen
-1. Export ALL configuration from DEV database
-2. Generate a mega-patch that applies all config to PROD
-3. Run the patch on PROD
-4. Clear cache and test
+### The Root Cause
+Frappe fixtures ONLY CREATE new records. They DO NOT UPDATE existing records.
+When PROD already has a Custom Field, running `migrate` SKIPS the fixture update.
+The database values on PROD stay whatever they were before.
 
 ---
 
-## STEP 1: Create the diagnostic script
+## RULES - DO NOT BREAK THESE
 
-Create file: `~/frappe-bench/apps/tub_suite/tub_suite/patches/diagnose_asset_repair.py`
+### Rule 1: NEVER add config-sync patches to patches.txt
+Patches in patches.txt run during `bench migrate`. If they contain config snapshots,
+they become stale as soon as DEV changes. This is what caused the v2.1.19 disaster.
+
+### Rule 2: NEVER commit from PROD to the repo
+All commits should flow DEV → GitHub → PROD. Never the other direction.
+PROD should only ever `git pull` or `git reset --hard origin/branch`.
+
+### Rule 3: Config changes need TWO things
+1. Update the fixture JSON file (for new installs)
+2. Create a ONE-TIME bench execute script (for existing PROD)
+
+### Rule 4: Test on DEV THEN deploy to PROD
+Never modify PROD directly unless it's a one-time database fix via `bench console`.
+
+### Rule 5: Read the existing patches.txt before adding anything
+Check what patches already exist. Make sure nothing conflicts.
+
+---
+
+## CORRECT WAY TO SYNC DEV → PROD
+
+### Method 1: One-time bench execute (for immediate fixes)
+
+This runs ONCE manually. It does NOT go in patches.txt. It does NOT run on migrate.
+
+```bash
+# ON PROD - run manually, one time only
+bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev
+```
+
+The script file goes in `tub_suite/scripts/` (NOT `tub_suite/patches/`).
+It is NEVER added to patches.txt.
+
+### Method 2: bench console (for emergency fixes)
+
+```bash
+# ON PROD - direct database fix
+bench --site tub.x-desk.tech console
+```
 
 ```python
-"""
-Asset Repair Configuration Diagnostic
-======================================
-Run this ON PRODUCTION to identify ALL configuration issues at once.
-
-Usage:
-    bench --site tub.x-desk.tech execute tub_suite.patches.diagnose_asset_repair.run_diagnostics
-"""
-
 import frappe
-from collections import defaultdict
+# Fix specific field
+frappe.db.set_value("Custom Field", "Asset Repair-my_field", "hidden", 1)
+frappe.db.commit()
+frappe.clear_cache()
+```
 
+### Method 3: Proper fixture export (for new installs)
 
-def run_diagnostics():
-    """
-    Comprehensive diagnostic for Asset Repair configuration.
-    Run on PRODUCTION to see all issues.
-    """
-    
-    print("\n" + "=" * 70)
-    print("ASSET REPAIR CONFIGURATION DIAGNOSTIC")
-    print("=" * 70)
-    
-    issues = []
-    warnings = []
-    
-    # ==========================================
-    # 1. CHECK CUSTOM FIELD VISIBILITY
-    # ==========================================
-    print("\n[1/7] Checking Custom Field visibility rules...")
-    
-    custom_fields = frappe.get_all(
-        "Custom Field",
-        filters={"dt": ["in", ["Asset Repair", "Asset Repair Parts Used", 
-                               "Asset Repair Parts Replaced", "Asset Repair Additional Parts"]]},
-        fields=["name", "fieldname", "dt", "depends_on", "hidden", "read_only"]
-    )
-    
-    for cf in custom_fields:
-        if "section" in cf['fieldname'].lower() and not cf.get('depends_on'):
-            issues.append(f"Custom Field '{cf['name']}' has no depends_on (section might show in wrong states)")
-    
-    print(f"   Found {len(custom_fields)} custom fields")
-    
-    # ==========================================
-    # 2. CHECK CHILD TABLE GRID COLUMNS
-    # ==========================================
-    print("\n[2/7] Checking child table grid columns (in_list_view)...")
-    
-    child_tables = ["Asset Repair Parts Used", "Asset Repair Parts Replaced", "Asset Repair Additional Parts"]
-    
-    for table in child_tables:
-        fields = frappe.get_all(
-            "DocField",
-            filters={"parent": table, "in_list_view": 1},
-            fields=["fieldname", "in_list_view", "columns"]
-        )
-        
-        visible_count = len(fields)
-        field_names = [f['fieldname'] for f in fields]
-        
-        if visible_count != 2:
-            issues.append(f"{table}: Has {visible_count} grid columns visible (expected 2). Fields: {field_names}")
-        else:
-            print(f"   ✓ {table}: {visible_count} columns ({', '.join(field_names)})")
-    
-    # ==========================================
-    # 3. CHECK WORKFLOW STATES - allow_edit
-    # ==========================================
-    print("\n[3/7] Checking Workflow state permissions (allow_edit)...")
-    
-    workflow = frappe.get_doc("Workflow", {"document_type": "Asset Repair"})
-    
-    if not workflow:
-        issues.append("No workflow found for Asset Repair!")
-    else:
-        for state in workflow.states:
-            allow_edit = state.allow_edit or ""
-            roles = [r.strip() for r in allow_edit.split(",") if r.strip()]
-            
-            if not roles:
-                warnings.append(f"State '{state.state}' has no roles in allow_edit (no one can edit)")
-            
-            if state.state == "Approved for Repair":
-                if "Engineering Supervisor" not in roles and "Engineering Team" not in roles:
-                    issues.append(f"State 'Approved for Repair' missing Engineering roles. Has: {roles}")
-            
-            print(f"   {state.state}: {allow_edit or '(none)'}")
-    
-    # ==========================================
-    # 4. CHECK WORKFLOW TRANSITIONS - allowed roles
-    # ==========================================
-    print("\n[4/7] Checking Workflow transitions (allowed roles)...")
-    
-    if workflow:
-        for trans in workflow.transitions:
-            allowed = trans.allowed or ""
-            
-            if not allowed:
-                warnings.append(f"Transition '{trans.state}' -> '{trans.next_state}' has no allowed roles")
-            
-            print(f"   {trans.state} --[{trans.action}]--> {trans.next_state}: {allowed or '(none)'}")
-    
-    # ==========================================
-    # 5. CHECK CLIENT SCRIPTS
-    # ==========================================
-    print("\n[5/7] Checking Client Scripts...")
-    
-    client_scripts = frappe.get_all(
-        "Client Script",
-        filters={"dt": "Asset Repair"},
-        fields=["name", "enabled", "script"]
-    )
-    
-    for cs in client_scripts:
-        status = "✓ Enabled" if cs['enabled'] else "✗ Disabled"
-        script_len = len(cs.get('script', '') or '')
-        print(f"   {status}: {cs['name']} ({script_len} chars)")
-        
-        if cs.get('script'):
-            if "Engineering Supervisor" not in cs['script'] and "field_locking" in cs['name'].lower():
-                warnings.append(f"Client Script '{cs['name']}' might be missing Engineering Supervisor logic")
-    
-    # ==========================================
-    # 6. CHECK SERVER SCRIPTS
-    # ==========================================
-    print("\n[6/7] Checking Server Scripts...")
-    
-    server_scripts = frappe.get_all(
-        "Server Script",
-        filters={"reference_doctype": "Asset Repair"},
-        fields=["name", "disabled", "script_type", "doctype_event"]
-    )
-    
-    for ss in server_scripts:
-        status = "✗ Disabled" if ss['disabled'] else "✓ Enabled"
-        print(f"   {status}: {ss['name']} ({ss['script_type']} on {ss['doctype_event']})")
-    
-    # ==========================================
-    # 7. CHECK OVERRIDE CLASS
-    # ==========================================
-    print("\n[7/7] Checking Override Class registration...")
-    
-    from frappe import get_hooks
-    
-    override_doctypes = get_hooks("override_doctype_class", {})
-    asset_repair_override = override_doctypes.get("Asset Repair", [])
-    
-    if asset_repair_override:
-        print(f"   Override class: {asset_repair_override}")
-        
-        try:
-            from tub_suite.overrides.asset_repair_override import AssetRepairOverride
-            
-            if hasattr(AssetRepairOverride, 'has_permission'):
-                print(f"   ✓ has_permission method exists")
-            else:
-                warnings.append("Override class missing has_permission method")
-            
-            if hasattr(AssetRepairOverride, 'validate'):
-                print(f"   ✓ validate method exists")
-                
-        except ImportError as e:
-            issues.append(f"Cannot import override class: {e}")
-    else:
-        warnings.append("No override class registered for Asset Repair")
-    
-    # ==========================================
-    # SUMMARY
-    # ==========================================
-    print("\n" + "=" * 70)
-    print("DIAGNOSTIC SUMMARY")
-    print("=" * 70)
-    
-    if issues:
-        print(f"\n❌ CRITICAL ISSUES ({len(issues)}):")
-        for i, issue in enumerate(issues, 1):
-            print(f"   {i}. {issue}")
-    else:
-        print("\n✅ No critical issues found!")
-    
-    if warnings:
-        print(f"\n⚠️  WARNINGS ({len(warnings)}):")
-        for i, warning in enumerate(warnings, 1):
-            print(f"   {i}. {warning}")
-    
-    # ==========================================
-    # PERMISSION MATRIX
-    # ==========================================
-    print("\n" + "=" * 70)
-    print("📋 PERMISSION MATRIX (Workflow States vs Roles)")
-    print("-" * 70)
-    
-    if workflow:
-        roles = set()
-        for state in workflow.states:
-            for role in (state.allow_edit or "").split(","):
-                if role.strip():
-                    roles.add(role.strip())
-        
-        roles = sorted(roles)
-        
-        print(f"{'State':<30} | " + " | ".join([r[:12] for r in roles]))
-        print("-" * 70)
-        
-        for state in workflow.states:
-            allow_edit_roles = [r.strip() for r in (state.allow_edit or "").split(",")]
-            row = f"{state.state:<30} | "
-            for role in roles:
-                if role in allow_edit_roles:
-                    row += f"{'✓':^12} | "
-                else:
-                    row += f"{'':^12} | "
-            print(row)
-    
-    print("\n" + "=" * 70)
-    
-    return {"issues": issues, "warnings": warnings}
+```bash
+# ON DEV after making UI changes
+cd ~/frappe-bench
+bench --site tub export-fixtures --app tub_suite
+# Then commit the updated fixture JSON files
+```
+
+This updates the JSON files so NEW installations get correct values.
+But it does NOT help existing PROD (because fixtures don't update existing records).
+
+---
+
+## CURRENT STATE (as of v2.1.29)
+
+### What was done:
+- v2.1.19: mega_sync_all_config patch created (BAD - caused config reset loop)
+- v2.1.24: Remove duplicate workflow transitions
+- v2.1.25: Remove section_break_23 and final_remarks from field_order
+- v2.1.26: Remove Custom DocPerm from fixtures
+- v2.1.27: Set Section 5 Final Remarks fields to hidden in fixture
+- v2.1.28: Remove fm_en_04_section_5 from field_order
+- v2.1.29: REMOVED mega_sync patch from patches.txt (the fix!)
+
+### What's in patches.txt now (after v2.1.29):
+The mega_sync_all_config line was removed. Check current state:
+```bash
+cat ~/frappe-bench/apps/tub_suite/tub_suite/patches.txt
+```
+
+### Known remaining issues on PROD:
+- Section 5 (Final Remarks) visibility may still be wrong
+- Supervisor signature fields may be affected
+- Workflow state permissions may have stale values
+- 112 combinations (8 states × 7 roles × 2 repair types) mostly untested
+
+---
+
+## WHAT TO DO NOW
+
+---
+
+## WHAT HAPPENED WITH v2.1.24-v2.1.29 (February 2026)
+
+### The Problem Discovered
+After deploying v2.1.19's mega_sync_all_config patch, every subsequent fix (v2.1.24-v2.1.28) was being UNDONE on every `migrate`:
+
+1. **v2.1.24**: Fixed duplicate workflow transitions in workflow.json fixture
+2. **v2.1.25**: Removed section_break_23 and final_remarks from field_order in property_setter.json
+3. **v2.1.26**: Removed broken Custom DocPerm fixture causing migrate crash
+4. **v2.1.27**: Set Section 5 fields (fm_en_04_section_5, final_remarks) to `hidden=1` in custom_field.json
+5. **v2.1.28**: Removed fm_en_04_section_5 from field_order in property_setter.json
+
+BUT: Every time `migrate` ran, the mega_sync patch (v2.1.19) ran FIRST and reset everything back to OLD values before fixture sync could apply the new values.
+
+### The Root Cause
+The mega_sync_all_config patch:
+- Was added to patches.txt in v2.1.19
+- **Ran on EVERY migrate** (patches in patches.txt always run)
+- Read from fixture files and applied them to PROD database
+- BUT it read the fixture files at THE TIME IT WAS CREATED (v2.1.19)
+- Even though we updated the fixture files (v2.1.24-v2.1.28), the patch had OLD values baked in
+- Result: **Infinite reset loop** - fix → migrate → reset → fix → migrate → reset
+
+### The Fix (v2.1.29)
+Removed the mega_sync patch entirely:
+```bash
+# Removed from patches.txt
+sed -i '/mega_sync_all_config/d' tub_suite/patches.txt
+
+# Deleted execution history
+frappe.db.sql("DELETE FROM `tabPatch Log` WHERE patch LIKE '%mega_sync_all_config%'")
+```
+
+### Why It Took So Long To Find
+1. The patch name didn't show up in migrate output (ran silently)
+2. We assumed fixtures were the problem (but they were correct in the code)
+3. We kept trying to fix PROD database manually (which got reset on next migrate)
+4. The mega_sync patch seemed like a good idea initially (sync DEV → PROD)
+5. We didn't realize patches.txt patches run EVERY migrate forever
+
+### Lessons Learned
+- ❌ **NEVER add config-sync patches to patches.txt**
+- ❌ **Patches with baked-in config values become stale immediately**
+- ❌ **Patches in patches.txt run on EVERY migrate (not just once)**
+- ✅ **Use one-time `bench execute` scripts instead**
+- ✅ **Keep config in JSON files, read at runtime**
+- ✅ **Fixtures only work for NEW installs, not updates**
+
+---
+
+### Step 1: Create a sync SCRIPT (not a patch)
+
+Create file: `~/frappe-bench/apps/tub_suite/tub_suite/scripts/__init__.py` (empty)
+Create file: `~/frappe-bench/apps/tub_suite/tub_suite/scripts/sync_config_from_dev.py`
+
+This script should:
+1. Run on DEV first to EXPORT current config to a JSON file
+2. That JSON file gets committed to the repo
+3. Run on PROD to IMPORT from that JSON file
+4. It is NEVER added to patches.txt
+5. It reads the JSON at runtime (not baked-in values)
+
+### Step 2: Export from DEV
+
+```bash
+bench --site tub execute tub_suite.scripts.sync_config_from_dev.export_dev_config
+```
+
+This creates: `~/frappe-bench/apps/tub_suite/tub_suite/config/asset_repair_config.json`
+
+### Step 3: Commit the config JSON
+
+```bash
+cd ~/frappe-bench/apps/tub_suite
+git add tub_suite/config/asset_repair_config.json
+git commit -m "chore: Export current DEV config for PROD sync"
+git push origin refs/heads/v2.1.0
+```
+
+### Step 4: Pull on PROD and run sync
+
+```bash
+# On PROD
+cd /home/taynaja/frappe-bench/apps/tub_suite
+git fetch origin && git reset --hard origin/v2.1.0
+
+# Run the sync (NOT migrate, just execute)
+cd /home/taynaja/frappe-bench
+bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.apply_to_prod
+bench --site tub.x-desk.tech clear-cache
+```
+
+### Step 5: Verify
+
+```bash
+bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.verify_sync
 ```
 
 ---
 
-## STEP 2: Create the sync generator script
+## THE SYNC SCRIPT
 
-Create file: `~/frappe-bench/apps/tub_suite/tub_suite/patches/generate_prod_sync.py`
+Create: `~/frappe-bench/apps/tub_suite/tub_suite/scripts/sync_config_from_dev.py`
 
 ```python
 """
-DIRECT DATABASE SYNC: Copy DEV Config to PROD
-==============================================
-
-Run this ON DEV (site: tub) to generate a patch that syncs PROD (site: tub.x-desk.tech).
+Asset Repair Configuration Sync
+================================
+This is a MANUAL sync script. NOT a patch. NEVER add to patches.txt.
 
 Usage:
-    bench --site tub execute tub_suite.patches.generate_prod_sync.generate_python_patch
+    # Step 1: Export from DEV
+    bench --site tub execute tub_suite.scripts.sync_config_from_dev.export_dev_config
+
+    # Step 2: Commit the JSON file to git, push, pull on PROD
+
+    # Step 3: Apply to PROD
+    bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.apply_to_prod
+
+    # Step 4: Verify
+    bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.verify_sync
 """
 
 import frappe
 import json
+import os
 from datetime import datetime
 
 
-def generate_python_patch():
+# Path to the config file (relative to app root)
+CONFIG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "asset_repair_config.json")
+
+# DocTypes we care about
+ASSET_REPAIR_DOCTYPES = [
+    "Asset Repair",
+    "Asset Repair Parts Used",
+    "Asset Repair Parts Replaced",
+    "Asset Repair Additional Parts",
+]
+
+
+def export_dev_config():
     """
-    Generate a Python patch file that syncs PROD to match DEV.
-    Run this ON DEV ENVIRONMENT (site: tub).
+    Export ALL Asset Repair configuration from DEV database to a JSON file.
+    Run this ON DEV: bench --site tub execute tub_suite.scripts.sync_config_from_dev.export_dev_config
     """
-    
+
+    site = frappe.local.site
+    print(f"\n{'='*60}")
+    print(f"EXPORTING CONFIG FROM: {site}")
+    print(f"{'='*60}")
+
     config = {
+        "_meta": {
+            "exported_from": site,
+            "exported_at": datetime.now().isoformat(),
+            "description": "Asset Repair configuration - DO NOT EDIT MANUALLY"
+        },
         "custom_fields": {},
         "property_setters": {},
         "docfields": {},
@@ -284,196 +286,257 @@ def generate_python_patch():
         "client_scripts": {},
         "server_scripts": {}
     }
-    
-    print("Collecting Custom Fields...")
-    for cf in frappe.get_all("Custom Field", 
-                             filters={"dt": ["in", ["Asset Repair", "Asset Repair Parts Used", 
-                                                    "Asset Repair Parts Replaced", "Asset Repair Additional Parts"]]},
+
+    # 1. Custom Fields
+    print("\n[1/7] Custom Fields...")
+    for cf in frappe.get_all("Custom Field",
+                             filters={"dt": ["in", ASSET_REPAIR_DOCTYPES]},
                              fields=["*"]):
-        config["custom_fields"][cf['name']] = {
-            "depends_on": cf.get('depends_on'),
-            "mandatory_depends_on": cf.get('mandatory_depends_on'),
-            "read_only_depends_on": cf.get('read_only_depends_on'),
-            "hidden": cf.get('hidden'),
-            "read_only": cf.get('read_only'),
-            "reqd": cf.get('reqd'),
-            "in_list_view": cf.get('in_list_view'),
-            "in_standard_filter": cf.get('in_standard_filter'),
-            "columns": cf.get('columns'),
-            "default": cf.get('default'),
-            "options": cf.get('options'),
-            "fetch_from": cf.get('fetch_from'),
-            "insert_after": cf.get('insert_after'),
+        config["custom_fields"][cf["name"]] = {
+            "dt": cf.get("dt"),
+            "fieldname": cf.get("fieldname"),
+            "fieldtype": cf.get("fieldtype"),
+            "label": cf.get("label"),
+            "insert_after": cf.get("insert_after"),
+            "options": cf.get("options"),
+            "depends_on": cf.get("depends_on"),
+            "mandatory_depends_on": cf.get("mandatory_depends_on"),
+            "read_only_depends_on": cf.get("read_only_depends_on"),
+            "hidden": cf.get("hidden"),
+            "read_only": cf.get("read_only"),
+            "reqd": cf.get("reqd"),
+            "in_list_view": cf.get("in_list_view"),
+            "in_standard_filter": cf.get("in_standard_filter"),
+            "columns": cf.get("columns"),
+            "default": cf.get("default"),
+            "fetch_from": cf.get("fetch_from"),
+            "description": cf.get("description"),
         }
-    
-    print("Collecting Property Setters...")
+    print(f"     {len(config['custom_fields'])} fields exported")
+
+    # 2. Property Setters
+    print("[2/7] Property Setters...")
     for ps in frappe.get_all("Property Setter",
-                             filters={"doc_type": ["in", ["Asset Repair", "Asset Repair Parts Used",
-                                                          "Asset Repair Parts Replaced", "Asset Repair Additional Parts"]]},
+                             filters={"doc_type": ["in", ASSET_REPAIR_DOCTYPES]},
                              fields=["*"]):
-        config["property_setters"][ps['name']] = {
-            "doc_type": ps.get('doc_type'),
-            "doctype_or_field": ps.get('doctype_or_field'),
-            "field_name": ps.get('field_name'),
-            "property": ps.get('property'),
-            "property_type": ps.get('property_type'),
-            "value": ps.get('value')
+        config["property_setters"][ps["name"]] = {
+            "doc_type": ps.get("doc_type"),
+            "doctype_or_field": ps.get("doctype_or_field"),
+            "field_name": ps.get("field_name"),
+            "property": ps.get("property"),
+            "property_type": ps.get("property_type"),
+            "value": ps.get("value"),
         }
-    
-    print("Collecting DocFields...")
+    print(f"     {len(config['property_setters'])} setters exported")
+
+    # 3. DocFields (child table grid config)
+    print("[3/7] DocFields (child tables)...")
+    child_tables = [dt for dt in ASSET_REPAIR_DOCTYPES if dt != "Asset Repair"]
     for df in frappe.get_all("DocField",
-                             filters={"parent": ["in", ["Asset Repair Parts Used",
-                                                        "Asset Repair Parts Replaced",
-                                                        "Asset Repair Additional Parts"]]},
-                             fields=["parent", "fieldname", "in_list_view", "columns", "read_only", "hidden"]):
+                             filters={"parent": ["in", child_tables]},
+                             fields=["name", "parent", "fieldname", "fieldtype", "label",
+                                     "in_list_view", "columns", "read_only", "hidden", "reqd"]):
         key = f"{df['parent']}.{df['fieldname']}"
         config["docfields"][key] = {
-            "parent": df['parent'],
-            "fieldname": df['fieldname'],
-            "in_list_view": df.get('in_list_view'),
-            "columns": df.get('columns'),
-            "read_only": df.get('read_only'),
-            "hidden": df.get('hidden')
+            "parent": df["parent"],
+            "fieldname": df["fieldname"],
+            "in_list_view": df.get("in_list_view"),
+            "columns": df.get("columns"),
+            "read_only": df.get("read_only"),
+            "hidden": df.get("hidden"),
         }
-    
-    print("Collecting Workflow States...")
+    print(f"     {len(config['docfields'])} fields exported")
+
+    # 4. Workflow States
+    print("[4/7] Workflow States...")
     for ws in frappe.db.sql("""
-        SELECT wds.state, wds.allow_edit, wds.doc_status, wds.update_field, wds.update_value, w.name as parent
+        SELECT wds.state, wds.allow_edit, wds.doc_status, wds.update_field,
+               wds.update_value, wds.is_optional_state, w.name as parent
         FROM `tabWorkflow Document State` wds
         JOIN `tabWorkflow` w ON wds.parent = w.name
         WHERE w.document_type = 'Asset Repair'
+        ORDER BY wds.idx
     """, as_dict=True):
         config["workflow_states"].append({
-            "parent": ws['parent'],
-            "state": ws['state'],
-            "allow_edit": ws.get('allow_edit', ''),
-            "doc_status": ws.get('doc_status'),
-            "update_field": ws.get('update_field'),
-            "update_value": ws.get('update_value')
+            "parent": ws["parent"],
+            "state": ws["state"],
+            "allow_edit": ws.get("allow_edit", ""),
+            "doc_status": ws.get("doc_status"),
+            "update_field": ws.get("update_field"),
+            "update_value": ws.get("update_value"),
         })
-    
-    print("Collecting Workflow Transitions...")
+    print(f"     {len(config['workflow_states'])} states exported")
+
+    # 5. Workflow Transitions
+    print("[5/7] Workflow Transitions...")
     for wt in frappe.db.sql("""
-        SELECT wt.state, wt.action, wt.next_state, wt.allowed, wt.allow_self_approval, wt.condition, w.name as parent
+        SELECT wt.state, wt.action, wt.next_state, wt.allowed,
+               wt.allow_self_approval, wt.`condition`, w.name as parent
         FROM `tabWorkflow Transition` wt
         JOIN `tabWorkflow` w ON wt.parent = w.name
         WHERE w.document_type = 'Asset Repair'
+        ORDER BY wt.idx
     """, as_dict=True):
         config["workflow_transitions"].append({
-            "parent": wt['parent'],
-            "state": wt['state'],
-            "action": wt['action'],
-            "next_state": wt['next_state'],
-            "allowed": wt.get('allowed', ''),
-            "allow_self_approval": wt.get('allow_self_approval'),
-            "condition": wt.get('condition', '')
+            "parent": wt["parent"],
+            "state": wt["state"],
+            "action": wt["action"],
+            "next_state": wt["next_state"],
+            "allowed": wt.get("allowed", ""),
+            "allow_self_approval": wt.get("allow_self_approval"),
+            "condition": wt.get("condition", ""),
         })
-    
-    print("Collecting Client Scripts...")
-    for cs in frappe.get_all("Client Script", filters={"dt": "Asset Repair"}, fields=["name", "script", "enabled"]):
-        config["client_scripts"][cs['name']] = {
-            "script": cs.get('script', ''),
-            "enabled": cs.get('enabled', 0)
+    print(f"     {len(config['workflow_transitions'])} transitions exported")
+
+    # 6. Client Scripts
+    print("[6/7] Client Scripts...")
+    for cs in frappe.get_all("Client Script",
+                             filters={"dt": "Asset Repair"},
+                             fields=["name", "dt", "view", "enabled", "script"]):
+        config["client_scripts"][cs["name"]] = {
+            "dt": cs.get("dt"),
+            "view": cs.get("view"),
+            "enabled": cs.get("enabled"),
+            "script": cs.get("script", ""),
         }
-    
-    print("Collecting Server Scripts...")
-    for ss in frappe.get_all("Server Script", filters={"reference_doctype": "Asset Repair"}, fields=["name", "script", "disabled"]):
-        config["server_scripts"][ss['name']] = {
-            "script": ss.get('script', ''),
-            "disabled": ss.get('disabled', 0)
+    print(f"     {len(config['client_scripts'])} scripts exported")
+
+    # 7. Server Scripts
+    print("[7/7] Server Scripts...")
+    for ss in frappe.get_all("Server Script",
+                             filters={"reference_doctype": "Asset Repair"},
+                             fields=["name", "script_type", "reference_doctype",
+                                     "doctype_event", "disabled", "script"]):
+        config["server_scripts"][ss["name"]] = {
+            "script_type": ss.get("script_type"),
+            "reference_doctype": ss.get("reference_doctype"),
+            "doctype_event": ss.get("doctype_event"),
+            "disabled": ss.get("disabled"),
+            "script": ss.get("script", ""),
         }
-    
-    # Generate the patch file
-    patch_template = '''"""
-Asset Repair Configuration Mega-Sync
-====================================
-Generated from DEV (site: tub): {timestamp}
-Target: PROD (site: tub.x-desk.tech)
+    print(f"     {len(config['server_scripts'])} scripts exported")
 
-This patch syncs ALL Asset Repair configuration to match DEV.
+    # Write to file
+    os.makedirs(CONFIG_DIR, exist_ok=True)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2, default=str, ensure_ascii=False)
 
-Usage:
-    1. Copy this file to: ~/frappe-bench/apps/tub_suite/tub_suite/patches/mega_sync_dev_to_prod.py
-    2. Add to patches.txt: tub_suite.patches.mega_sync_dev_to_prod
-    3. Run: bench --site tub.x-desk.tech migrate
-    4. Clear cache: bench --site tub.x-desk.tech clear-cache
-"""
+    print(f"\n{'='*60}")
+    print(f"✅ Config exported to: {CONFIG_FILE}")
+    print(f"{'='*60}")
+    print(f"\nNext steps:")
+    print(f"  1. git add tub_suite/config/asset_repair_config.json")
+    print(f"  2. git commit -m 'chore: Export DEV config for PROD sync'")
+    print(f"  3. git push origin refs/heads/v2.1.0")
+    print(f"  4. On PROD: git fetch origin && git reset --hard origin/v2.1.0")
+    print(f"  5. On PROD: bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.apply_to_prod")
 
-import frappe
-import json
-
-# Configuration data exported from DEV
-CONFIG = {config_json}
+    return CONFIG_FILE
 
 
-def execute():
-    """Sync all configuration from DEV to PROD."""
-    
-    print("=" * 60)
-    print("MEGA-SYNC: Applying DEV configuration to PROD")
-    print("Site: tub.x-desk.tech")
-    print("=" * 60)
-    
+def apply_to_prod():
+    """
+    Apply DEV configuration to PROD database.
+    Run this ON PROD: bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.apply_to_prod
+    """
+
+    site = frappe.local.site
+    print(f"\n{'='*60}")
+    print(f"APPLYING DEV CONFIG TO: {site}")
+    print(f"{'='*60}")
+
+    # Load config from JSON file
+    if not os.path.exists(CONFIG_FILE):
+        print(f"❌ Config file not found: {CONFIG_FILE}")
+        print(f"   Did you export from DEV and pull the latest code?")
+        return
+
+    with open(CONFIG_FILE, "r") as f:
+        config = json.load(f)
+
+    print(f"Config exported from: {config['_meta']['exported_from']}")
+    print(f"Config exported at: {config['_meta']['exported_at']}")
+
+    errors = []
+    updated = 0
+    skipped = 0
+
     # 1. Custom Fields
-    print("\\n[1/7] Syncing Custom Fields...")
-    for cf_name, values in CONFIG["custom_fields"].items():
+    print("\n[1/7] Syncing Custom Fields...")
+    for cf_name, values in config["custom_fields"].items():
         try:
             if frappe.db.exists("Custom Field", cf_name):
                 for field, value in values.items():
+                    if field in ("dt", "fieldname", "fieldtype", "label"):
+                        continue  # Don't update structural fields
                     frappe.db.set_value("Custom Field", cf_name, field, value, update_modified=False)
-                print(f"  ✓ {{cf_name}}")
+                updated += 1
+                print(f"  ✓ {cf_name}")
+            else:
+                skipped += 1
+                print(f"  ⊘ {cf_name} (not found on PROD)")
         except Exception as e:
-            print(f"  ✗ {{cf_name}}: {{e}}")
-    
+            errors.append(f"Custom Field {cf_name}: {e}")
+            print(f"  ✗ {cf_name}: {e}")
+
     # 2. Property Setters
-    print("\\n[2/7] Syncing Property Setters...")
-    for ps_name, values in CONFIG["property_setters"].items():
+    print("\n[2/7] Syncing Property Setters...")
+    for ps_name, values in config["property_setters"].items():
         try:
             if frappe.db.exists("Property Setter", ps_name):
-                for field, value in values.items():
-                    frappe.db.set_value("Property Setter", ps_name, field, value, update_modified=False)
-                print(f"  ✓ {{ps_name}}")
+                frappe.db.set_value("Property Setter", ps_name, "value", values.get("value"), update_modified=False)
+                updated += 1
+                print(f"  ✓ {ps_name}")
             else:
-                # Create new Property Setter
+                # Create if doesn't exist
                 ps = frappe.new_doc("Property Setter")
                 ps.update(values)
                 ps.name = ps_name
                 ps.insert(ignore_permissions=True)
-                print(f"  + Created: {{ps_name}}")
+                updated += 1
+                print(f"  + {ps_name} (created)")
         except Exception as e:
-            print(f"  ✗ {{ps_name}}: {{e}}")
-    
-    # 3. DocFields (grid columns)
-    print("\\n[3/7] Syncing DocFields (grid columns)...")
-    for key, values in CONFIG["docfields"].items():
+            errors.append(f"Property Setter {ps_name}: {e}")
+            print(f"  ✗ {ps_name}: {e}")
+
+    # 3. DocFields
+    print("\n[3/7] Syncing DocFields...")
+    for key, values in config["docfields"].items():
         try:
-            frappe.db.sql("""
-                UPDATE `tabDocField` 
+            result = frappe.db.sql("""
+                UPDATE `tabDocField`
                 SET in_list_view = %s, columns = %s, read_only = %s, hidden = %s
                 WHERE parent = %s AND fieldname = %s
-            """, (values["in_list_view"], values["columns"], values["read_only"], 
-                  values["hidden"], values["parent"], values["fieldname"]))
-            print(f"  ✓ {{key}}")
+            """, (values["in_list_view"], values["columns"],
+                  values["read_only"], values["hidden"],
+                  values["parent"], values["fieldname"]))
+            updated += 1
+            print(f"  ✓ {key}")
         except Exception as e:
-            print(f"  ✗ {{key}}: {{e}}")
-    
+            errors.append(f"DocField {key}: {e}")
+            print(f"  ✗ {key}: {e}")
+
     # 4. Workflow States
-    print("\\n[4/7] Syncing Workflow States...")
-    for ws in CONFIG["workflow_states"]:
+    print("\n[4/7] Syncing Workflow States...")
+    for ws in config["workflow_states"]:
         try:
             frappe.db.sql("""
                 UPDATE `tabWorkflow Document State`
-                SET allow_edit = %s, doc_status = %s, update_field = %s, update_value = %s
+                SET allow_edit = %s, doc_status = %s,
+                    update_field = %s, update_value = %s
                 WHERE parent = %s AND state = %s
-            """, (ws["allow_edit"], ws.get("doc_status"), ws.get("update_field"), 
-                  ws.get("update_value"), ws["parent"], ws["state"]))
-            print(f"  ✓ {{ws['state']}}")
+            """, (ws["allow_edit"], ws.get("doc_status"),
+                  ws.get("update_field"), ws.get("update_value"),
+                  ws["parent"], ws["state"]))
+            updated += 1
+            print(f"  ✓ {ws['state']}: allow_edit={ws['allow_edit']}")
         except Exception as e:
-            print(f"  ✗ {{ws['state']}}: {{e}}")
-    
+            errors.append(f"Workflow State {ws['state']}: {e}")
+            print(f"  ✗ {ws['state']}: {e}")
+
     # 5. Workflow Transitions
-    print("\\n[5/7] Syncing Workflow Transitions...")
-    for wt in CONFIG["workflow_transitions"]:
+    print("\n[5/7] Syncing Workflow Transitions...")
+    for wt in config["workflow_transitions"]:
         try:
             frappe.db.sql("""
                 UPDATE `tabWorkflow Transition`
@@ -481,131 +544,209 @@ def execute():
                 WHERE parent = %s AND state = %s AND action = %s AND next_state = %s
             """, (wt["allowed"], wt["condition"], wt.get("allow_self_approval"),
                   wt["parent"], wt["state"], wt["action"], wt["next_state"]))
-            print(f"  ✓ {{wt['state']}} -> {{wt['next_state']}}")
+            updated += 1
+            print(f"  ✓ {wt['state']} --[{wt['action']}]--> {wt['next_state']}")
         except Exception as e:
-            print(f"  ✗ {{wt['state']}}: {{e}}")
-    
+            errors.append(f"Transition {wt['state']}->{wt['next_state']}: {e}")
+            print(f"  ✗ {wt['state']}: {e}")
+
     # 6. Client Scripts
-    print("\\n[6/7] Syncing Client Scripts...")
-    for cs_name, values in CONFIG["client_scripts"].items():
+    print("\n[6/7] Syncing Client Scripts...")
+    for cs_name, values in config["client_scripts"].items():
         try:
             if frappe.db.exists("Client Script", cs_name):
-                frappe.db.set_value("Client Script", cs_name, "script", values["script"], update_modified=False)
-                frappe.db.set_value("Client Script", cs_name, "enabled", values["enabled"], update_modified=False)
-                print(f"  ✓ {{cs_name}}")
+                frappe.db.set_value("Client Script", cs_name, {
+                    "script": values["script"],
+                    "enabled": values["enabled"]
+                }, update_modified=False)
+                updated += 1
+                print(f"  ✓ {cs_name}")
+            else:
+                skipped += 1
+                print(f"  ⊘ {cs_name} (not found)")
         except Exception as e:
-            print(f"  ✗ {{cs_name}}: {{e}}")
-    
+            errors.append(f"Client Script {cs_name}: {e}")
+            print(f"  ✗ {cs_name}: {e}")
+
     # 7. Server Scripts
-    print("\\n[7/7] Syncing Server Scripts...")
-    for ss_name, values in CONFIG["server_scripts"].items():
+    print("\n[7/7] Syncing Server Scripts...")
+    for ss_name, values in config["server_scripts"].items():
         try:
             if frappe.db.exists("Server Script", ss_name):
-                frappe.db.set_value("Server Script", ss_name, "script", values["script"], update_modified=False)
-                frappe.db.set_value("Server Script", ss_name, "disabled", values["disabled"], update_modified=False)
-                print(f"  ✓ {{ss_name}}")
+                frappe.db.set_value("Server Script", ss_name, {
+                    "script": values["script"],
+                    "disabled": values["disabled"]
+                }, update_modified=False)
+                updated += 1
+                print(f"  ✓ {ss_name}")
+            else:
+                skipped += 1
+                print(f"  ⊘ {ss_name} (not found)")
         except Exception as e:
-            print(f"  ✗ {{ss_name}}: {{e}}")
-    
-    # Commit and clear cache
-    print("\\n" + "=" * 60)
+            errors.append(f"Server Script {ss_name}: {e}")
+            print(f"  ✗ {ss_name}: {e}")
+
+    # Commit
     frappe.db.commit()
     frappe.clear_cache()
-    
-    print("✅ MEGA-SYNC COMPLETE!")
-    print("=" * 60)
-    print("\\n⚠️  IMPORTANT: Clear browser cache and hard refresh (Ctrl+Shift+R)")
-'''
-    
-    config_json = json.dumps(config, indent=4, default=str)
-    
-    patch_content = patch_template.format(
-        timestamp=datetime.now().isoformat(),
-        config_json=config_json
-    )
-    
-    output_file = f"/tmp/mega_sync_patch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.py"
-    with open(output_file, 'w') as f:
-        f.write(patch_content)
-    
+
     print(f"\n{'='*60}")
-    print(f"✅ Python patch generated: {output_file}")
+    print(f"SYNC COMPLETE")
+    print(f"  Updated: {updated}")
+    print(f"  Skipped: {skipped}")
+    print(f"  Errors:  {len(errors)}")
+    if errors:
+        print(f"\nErrors:")
+        for e in errors:
+            print(f"  - {e}")
     print(f"{'='*60}")
-    print(f"\nTo apply to production:")
-    print(f"  1. Copy to: ~/frappe-bench/apps/tub_suite/tub_suite/patches/mega_sync_dev_to_prod.py")
-    print(f"  2. Add to patches.txt: tub_suite.patches.mega_sync_dev_to_prod")
-    print(f"  3. Run: bench --site tub.x-desk.tech migrate")
-    print(f"  4. Clear cache: bench --site tub.x-desk.tech clear-cache")
-    
-    return output_file
+    print(f"\n⚠️  Clear browser cache and hard refresh (Ctrl+Shift+R)")
+
+
+def verify_sync():
+    """
+    Verify PROD configuration matches expected values.
+    Run ON PROD: bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.verify_sync
+    """
+
+    site = frappe.local.site
+    print(f"\n{'='*60}")
+    print(f"VERIFYING CONFIG ON: {site}")
+    print(f"{'='*60}")
+
+    if not os.path.exists(CONFIG_FILE):
+        print(f"❌ Config file not found: {CONFIG_FILE}")
+        return
+
+    with open(CONFIG_FILE, "r") as f:
+        config = json.load(f)
+
+    mismatches = []
+
+    # Check Custom Fields
+    print("\n[1/4] Verifying Custom Fields...")
+    for cf_name, expected in config["custom_fields"].items():
+        if frappe.db.exists("Custom Field", cf_name):
+            actual = frappe.db.get_value("Custom Field", cf_name,
+                                         ["depends_on", "hidden", "read_only"],
+                                         as_dict=True)
+            for field in ["depends_on", "hidden", "read_only"]:
+                exp_val = expected.get(field)
+                act_val = actual.get(field)
+                # Normalize
+                if exp_val is None: exp_val = ""
+                if act_val is None: act_val = ""
+                if str(exp_val) != str(act_val):
+                    mismatches.append(f"Custom Field {cf_name}.{field}: expected={exp_val}, actual={act_val}")
+
+    # Check DocFields
+    print("[2/4] Verifying DocFields...")
+    for key, expected in config["docfields"].items():
+        actual = frappe.db.sql("""
+            SELECT in_list_view, columns, read_only, hidden
+            FROM `tabDocField`
+            WHERE parent = %s AND fieldname = %s
+        """, (expected["parent"], expected["fieldname"]), as_dict=True)
+
+        if actual:
+            actual = actual[0]
+            for field in ["in_list_view", "columns"]:
+                if str(expected.get(field, 0)) != str(actual.get(field, 0)):
+                    mismatches.append(f"DocField {key}.{field}: expected={expected.get(field)}, actual={actual.get(field)}")
+
+    # Check Workflow States
+    print("[3/4] Verifying Workflow States...")
+    for ws in config["workflow_states"]:
+        actual = frappe.db.sql("""
+            SELECT allow_edit FROM `tabWorkflow Document State`
+            WHERE parent = %s AND state = %s
+        """, (ws["parent"], ws["state"]), as_dict=True)
+
+        if actual:
+            if (actual[0].get("allow_edit") or "") != (ws.get("allow_edit") or ""):
+                mismatches.append(f"Workflow State {ws['state']}.allow_edit: expected={ws['allow_edit']}, actual={actual[0].get('allow_edit')}")
+
+    # Check Workflow Transitions
+    print("[4/4] Verifying Workflow Transitions...")
+    for wt in config["workflow_transitions"]:
+        actual = frappe.db.sql("""
+            SELECT allowed, `condition` FROM `tabWorkflow Transition`
+            WHERE parent = %s AND state = %s AND action = %s AND next_state = %s
+        """, (wt["parent"], wt["state"], wt["action"], wt["next_state"]), as_dict=True)
+
+        if actual:
+            if (actual[0].get("allowed") or "") != (wt.get("allowed") or ""):
+                mismatches.append(f"Transition {wt['state']}->{wt['next_state']}.allowed: expected={wt['allowed']}, actual={actual[0].get('allowed')}")
+
+    print(f"\n{'='*60}")
+    if mismatches:
+        print(f"❌ FOUND {len(mismatches)} MISMATCHES:")
+        for m in mismatches:
+            print(f"  - {m}")
+    else:
+        print(f"✅ ALL CONFIG MATCHES! PROD is in sync with DEV.")
+    print(f"{'='*60}")
+
+    return mismatches
 ```
 
 ---
 
-## STEP 3: Execute the commands
+## DEPLOYMENT WORKFLOW GOING FORWARD
 
-### First, run diagnostic on PROD to see all issues:
+Every time you change something on DEV:
+
+### 1. Make changes on DEV UI or code
+
+### 2. Export config
 ```bash
-cd ~/frappe-bench
-bench --site tub.x-desk.tech execute tub_suite.patches.diagnose_asset_repair.run_diagnostics
+bench --site tub execute tub_suite.scripts.sync_config_from_dev.export_dev_config
 ```
 
-### Then, generate mega-patch from DEV:
+### 3. Commit and push
 ```bash
-cd ~/frappe-bench
-bench --site tub execute tub_suite.patches.generate_prod_sync.generate_python_patch
+cd ~/frappe-bench/apps/tub_suite
+git add -A
+git commit -m "description of changes"
+git push origin refs/heads/v2.1.0
 ```
 
-### Copy the generated patch:
+### 4. Deploy to PROD
 ```bash
-cp /tmp/mega_sync_patch_*.py ~/frappe-bench/apps/tub_suite/tub_suite/patches/mega_sync_dev_to_prod.py
-```
+# On PROD server
+cd /home/taynaja/frappe-bench/apps/tub_suite
+git fetch origin && git reset --hard origin/v2.1.0
 
-### Register the patch:
-```bash
-echo "tub_suite.patches.mega_sync_dev_to_prod" >> ~/frappe-bench/apps/tub_suite/tub_suite/patches.txt
-```
-
-### Run on PROD:
-```bash
+# Run migrate for code changes (patches, doctypes, etc.)
+cd /home/taynaja/frappe-bench
 bench --site tub.x-desk.tech migrate
+
+# Run config sync for database values
+bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.apply_to_prod
+
+# Clear cache
 bench --site tub.x-desk.tech clear-cache
 ```
 
-### If patch already executed and needs re-run:
+### 5. Verify
 ```bash
-bench --site tub.x-desk.tech execute frappe.patches.delete_patch_log --args '["tub_suite.patches.mega_sync_dev_to_prod"]'
-bench --site tub.x-desk.tech migrate
+bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.verify_sync
 ```
 
 ---
 
-## Summary of Tables Being Synced
+## IMPORTANT: What NOT to do
 
-| Table | What it controls |
-|-------|------------------|
-| `tabCustom Field` | Field visibility (depends_on), required, hidden |
-| `tabProperty Setter` | Property overrides on standard fields |
-| `tabDocField` | Child table grid columns (in_list_view) |
-| `tabWorkflow Document State` | Who can edit in each state (allow_edit) |
-| `tabWorkflow Transition` | Who can transition (allowed) |
-| `tabClient Script` | Browser-side validation |
-| `tabServer Script` | Server-side validation |
+❌ DO NOT add sync scripts to patches.txt
+❌ DO NOT commit from PROD server
+❌ DO NOT modify PROD database then run migrate (migrate may reset your changes)
+❌ DO NOT rely on fixtures to update existing records
+❌ DO NOT create patches that bake in config values at a point in time
+❌ DO NOT run `bench --site tub.x-desk.tech migrate` AFTER running the sync
+    (migrate might reset values via fixtures - always run migrate BEFORE sync)
 
----
-
-## Why This Problem Exists
-
-```
-DEV: Configure via UI → Values saved to DEV database
-     ↓
-Export to fixtures/custom_field.json (often has NULL or old values)
-     ↓
-PROD: Run migrate
-     ↓
-Frappe: "Record exists, skipping" (DOESN'T UPDATE!)
-     ↓
-PROD has OLD values, not DEV values
-```
-
-**Solution:** Use patches to UPDATE existing records. Fixtures only CREATE new records.
+✅ DO export config from DEV after every change
+✅ DO commit config JSON to the repo
+✅ DO run sync manually on PROD after pulling code
+✅ DO verify after sync
+✅ DO run migrate BEFORE sync (migrate first, then sync)
