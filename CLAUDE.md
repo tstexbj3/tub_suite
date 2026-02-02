@@ -423,3 +423,36 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 - Also fixed: Removed duplicate unconditional workflow transitions from workflow.json (lines 398-423)
 - Files modified: hooks.py, workflow.json, CLAUDE.md
 - Next: Step 7 VERIFY & COMMIT
+
+### 2026-02-02 20:45 — Step 7: VERIFY & COMMIT
+- Did: Verified file structure, staged all changes, committed and pushed to GitHub
+- Files committed (21 files):
+  - Created: 6 JSON files in tub_suite/custom/ (252KB total)
+  - Modified: hooks.py, 8 fixture JSONs, CLAUDE.md
+  - Deleted: 5 obsolete doc files (CLAUDE2.md, DEPLOYMENT_PROCEDURES.md, etc.)
+- Commit: 695e54f "refactor: Fix sync system using Frappe dual mechanisms (v2.1.32)"
+- Pushed: refs/heads/v2.1.0 (used full ref to avoid tag/branch conflict)
+- Result: ✅ All 7 steps complete. App now uses proper dual sync system.
+- Next: User deploys to PROD with migrate
+
+### 2026-02-02 20:46 — REFACTOR COMPLETE ✅
+**What was fixed:**
+- ROOT CAUSE: Created missing tub_suite/custom/ directory
+- Property Setters now use full-overwrite sync (no more timestamp skipping)
+- Separated Custom Fields from fixtures to custom/
+- Fixed workflow duplicate transitions issue
+- Cleaned up 5 obsolete documentation files
+
+**Before deploy to PROD:**
+1. SSH to VPS: `ssh taynaja@tub.x-desk.tech`
+2. Navigate: `cd /home/taynaja/frappe-bench/apps/tub_suite`
+3. Pull latest: `git fetch origin && git reset --hard origin/v2.1.0`
+4. Migrate: `cd ../.. && bench --site tub.x-desk.tech migrate`
+5. Clear cache: `bench --site tub.x-desk.tech clear-cache`
+
+**Expected results after migrate:**
+- Section 5 "Final Remarks" stays hidden ✅
+- PM repairs only show 2 buttons (PM Supervisor Verify/Reject) ✅
+- Child table columns remain visible ✅
+- Signature field visibility persists ✅
+- No more reset loops from mega_sync ✅
