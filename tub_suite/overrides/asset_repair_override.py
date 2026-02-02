@@ -223,10 +223,14 @@ def validate_asset_repair(doc, method):
             frappe.throw(_("Only the original reporter or supervisor can edit in Pending Reporter Confirmation state"))
 
     # State-specific permission checks
-    # Pending Engineering Assessment - ONLY Engineering Team can edit
+    # Pending Engineering Assessment - Engineering Team can edit, GM can transition INTO this state
     if check_state == "Pending Engineering Assessment":
+        # Allow GM transitioning FROM "Pending GM Approval Section 1"
+        if old_workflow_state and old_workflow_state == "Pending GM Approval Section 1" and is_manager:
+            return  # Allow GM to approve and transition to Engineering Assessment
+
         if is_engineer:
-            return  # Allow Engineering Team ONLY
+            return  # Allow Engineering Team to edit
         else:
             frappe.throw(_("Only Engineering Team can edit in Pending Engineering Assessment state"))
 
