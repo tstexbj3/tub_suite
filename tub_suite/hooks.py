@@ -18,8 +18,7 @@ fixtures = [
     {"dt": "Role", "filters": [["name", "in", ["Maintenance Inspector", "Maintenance Engineer", "Supervisor", "Maintenance Supervisor", "Engineering Supervisor", "Engineering Team"]]]},
     {"dt": "DocType", "filters": [["name", "in", ["Asset Repair Engineering Detail"]]]},
     {"dt": "Notification", "filters": [["is_standard", "=", 0]]},
-    {"dt": "Print Format", "filters": [["name", "=", "FM-EN-04"]]},
-    {"dt": "Custom DocPerm", "filters": [["role", "in", ["Maintenance User", "Supervisor", "Maintenance Supervisor", "Maintenance Manager", "Engineering Supervisor", "Engineering Team"]]]}
+    {"dt": "Print Format", "filters": [["name", "=", "FM-EN-04"]]}
 ]
 
 # Export fixtures configuration
