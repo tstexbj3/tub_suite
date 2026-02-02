@@ -465,3 +465,11 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 - Verification: No Maintenance Supervisor transitions with condition=NONE remain for "Pending Supervisor Verification" state
 - Reason: workflow.json in fixtures was already fixed (Step 6), but DEV DB still had old duplicates. Now DB matches fixture.
 - Next: User deploys to PROD
+
+### 2026-02-02 21:12 — Fix repair_result_status editable when Finished (v2.1.33)
+- Issue: User reported "ผลการดำเนินการ (Repair Result)" field was editable in Finished state
+- Fix: Added `read_only_depends_on: eval:doc.workflow_state=="Finished"` to repair_result_status field
+- Updated: DEV database Custom Field record + re-exported asset_repair.json
+- Verified: Line 3769 of asset_repair.json now has the read_only_depends_on condition
+- Print format logo: Investigated - /files/banner.png exists (59KB, public). Logo missing on PROD is likely a file sync issue, not a code issue.
+- Next: Commit v2.1.33 and update PROD deployment instructions
