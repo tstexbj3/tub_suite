@@ -2,6 +2,24 @@
  {
   "docstatus": 0,
   "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-27 15:06:23.232889",
+  "name": "Pending PM GM Approval",
+  "style": "Warning",
+  "workflow_state_name": "Pending PM GM Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-27 15:06:23.371875",
+  "name": "Pending PM Supervisor Verification",
+  "style": "Warning",
+  "workflow_state_name": "Pending PM Supervisor Verification"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
   "icon": "question-sign",
   "modified": "2025-08-03 22:36:12.164276",
   "name": "Pending",
@@ -111,15 +129,6 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-01-09 13:25:26.302495",
-  "name": "Pending Reporter Confirmation",
-  "style": "Primary",
-  "workflow_state_name": "Pending Reporter Confirmation"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2026-01-09 13:25:30.429786",
   "name": "Pending Reporter Supervisor Verification",
   "style": "Primary",
@@ -174,37 +183,10 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-01-09 13:32:17.254059",
-  "name": "Pending GM Final Approval",
-  "style": "Primary",
-  "workflow_state_name": "Pending GM Final Approval"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
   "modified": "2026-01-09 13:32:22.475291",
   "name": "Repair In Progress",
   "style": "Primary",
   "workflow_state_name": "Repair In Progress"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
-  "modified": "2026-01-09 13:32:12.720516",
-  "name": "Pending Engineering Assessment",
-  "style": "Primary",
-  "workflow_state_name": "Pending Engineering Assessment"
- },
- {
-  "docstatus": 0,
-  "doctype": "Workflow State",
-  "icon": "",
-  "modified": "2026-01-09 13:32:10.004989",
-  "name": "Pending GM Approval Section 1",
-  "style": "Primary",
-  "workflow_state_name": "Pending GM Approval Section 1"
  },
  {
   "docstatus": 0,
@@ -241,5 +223,41 @@
   "name": "Draft",
   "style": "",
   "workflow_state_name": "Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:17.254059",
+  "name": "Pending GM Final Approval",
+  "style": "Primary",
+  "workflow_state_name": "Pending GM Final Approval"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:10.004989",
+  "name": "Pending GM Approval Section 1",
+  "style": "Primary",
+  "workflow_state_name": "Pending GM Approval Section 1"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:25:26.302495",
+  "name": "Pending Reporter Confirmation",
+  "style": "Primary",
+  "workflow_state_name": "Pending Reporter Confirmation"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-01-09 13:32:12.720516",
+  "name": "Pending Engineering Assessment",
+  "style": "Primary",
+  "workflow_state_name": "Pending Engineering Assessment"
  }
 ]

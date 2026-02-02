@@ -2,6 +2,27 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
+  "modified": "2026-01-27 15:06:38.283925",
+  "name": "PM GM Approve",
+  "workflow_action_name": "PM GM Approve"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-27 15:06:38.285263",
+  "name": "PM GM Reject",
+  "workflow_action_name": "PM GM Reject"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
+  "modified": "2026-01-27 15:06:38.286662",
+  "name": "Finish PM Repair",
+  "workflow_action_name": "Finish PM Repair"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow Action Master",
   "modified": "2026-01-21 16:14:21.106473",
   "name": "Reporter Confirm",
   "workflow_action_name": "Reporter Confirm"
@@ -142,14 +163,14 @@
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "modified": "2026-01-27 18:52:00.000000",
+  "modified": "2026-01-27 18:52:00",
   "name": "PM Supervisor Verify",
   "workflow_action_name": "PM Supervisor Verify"
  },
  {
   "docstatus": 0,
   "doctype": "Workflow Action Master",
-  "modified": "2026-01-27 18:52:00.000000",
+  "modified": "2026-01-27 18:52:00",
   "name": "PM Supervisor Reject",
   "workflow_action_name": "PM Supervisor Reject"
  }
