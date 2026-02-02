@@ -473,3 +473,15 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 - Verified: Line 3769 of asset_repair.json now has the read_only_depends_on condition
 - Print format logo: Investigated - /files/banner.png exists (59KB, public). Logo missing on PROD is likely a file sync issue, not a code issue.
 - Next: Commit v2.1.33 and update PROD deployment instructions
+
+### 2026-02-02 21:20 — Lock all fields when Approved for Repair (v2.1.34)
+- Issue: User reported when workflow_state = "Approved for Repair", ALL fields should be locked EXCEPT Engineering Department 3 section
+- Fields that REMAIN editable: `completion_handover_date`, `repair_result_status`
+- Solution: User already configured this in DEV - exported customizations to sync to PROD
+- Added `read_only_depends_on: eval:doc.workflow_state=="Approved for Repair"` to:
+  - 58 custom fields (all except Engineering Dept 3 fields)
+  - 1 child table field
+  - 1 standard field Property Setter
+- Total: 84 occurrences of "Approved for Repair" read_only conditions in asset_repair.json
+- Verified: completion_handover_date and repair_result_status have `read_only_depends_on: null` (remain editable)
+- Next: Commit v2.1.34
