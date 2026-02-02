@@ -233,22 +233,6 @@
    "next_state": "Cancelled",
    "send_email_to_creator": 0,
    "state": "Finished"
-  },
-  {
-   "action": "Supervisor Verify",
-   "allow_self_approval": 1,
-   "allowed": "Maintenance Supervisor",
-   "next_state": "Pending Reporter Confirmation",
-   "send_email_to_creator": 0,
-   "state": "Pending Supervisor Verification"
-  },
-  {
-   "action": "Supervisor Reject",
-   "allow_self_approval": 1,
-   "allowed": "Maintenance Supervisor",
-   "next_state": "Approved for Repair",
-   "send_email_to_creator": 0,
-   "state": "Pending Supervisor Verification"
   }
  ],
  "workflow_name": "Asset Repair Workflow - Supervisor Only",
