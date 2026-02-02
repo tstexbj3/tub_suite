@@ -9,9 +9,10 @@ app_license = "mit"
 # ------------
 # IMPORT MODE: These fixtures will be IMPORTED during 'bench migrate'
 # The fixture files in tub_suite/fixtures/ will be applied to the database
-# NOTE: Custom Field and Property Setter are now in tub_suite/custom/ via export_customizations()
-#       They are NOT fixtures because they use full-overwrite sync, not timestamp-based
+# NOTE: Custom Field is in tub_suite/custom/ via export_customizations()
+# Property Setter kept here for standard field overrides (hidden, read_only, etc)
 fixtures = [
+    {"dt": "Property Setter", "filters": [["doc_type", "=", "Asset Repair"]]},
     {"dt": "Workflow", "filters": [["document_type", "=", "Asset Repair"]]},
     {"dt": "Workflow State"},
     {"dt": "Workflow Action Master"},
@@ -24,8 +25,13 @@ fixtures = [
 # Export fixtures configuration
 # When you run: bench --site SITE export-fixtures
 # It will use the filters below to export FROM database TO fixture files
-# NOTE: Custom Field and Property Setter removed - use export_customizations() instead
+# NOTE: Custom Field removed - use export_customizations() instead
+# Property Setter kept for standard field overrides (like hiding final_remarks)
 export_fixtures = [
+    {
+        "dt": "Property Setter",
+        "filters": [["doc_type", "=", "Asset Repair"]]
+    },
     {
         "dt": "Workflow",
         "filters": [["document_type", "=", "Asset Repair"]]
