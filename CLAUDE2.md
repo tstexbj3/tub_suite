@@ -19,6 +19,33 @@ The v2.1.19 mega_sync_all_config patch did exactly this and CAUSED the problems:
 - **Branch:** `v2.1.0`
 - **Repo:** `https://github.com/tstexbj3/tub_suite.git`
 
+### CRITICAL: Git Tag vs Branch Ambiguity
+
+**THE PROBLEM**: There is BOTH a tag named `v2.1.0` AND a branch named `v2.1.0` in the repo.
+
+When you run `git pull origin v2.1.0`, git pulls the **TAG** (which points to an old commit), NOT the **BRANCH** (which has all the latest commits).
+
+This is why PROD was stuck on old code even after pushing commits from DEV.
+
+**CORRECT COMMANDS**:
+
+```bash
+# ❌ NEVER DO THIS (pulls the tag, not the branch)
+git pull origin v2.1.0
+
+# ✅ ALWAYS DO THIS (resets to latest branch commit)
+git fetch origin
+git reset --hard origin/v2.1.0
+
+# When pushing (already correct)
+git push origin refs/heads/v2.1.0
+```
+
+**WHY THIS MATTERS**:
+- v2.1.24-v2.1.29 commits may have never reached PROD
+- PROD was stuck on the old v2.1.0 tag while DEV kept moving forward
+- This made debugging impossible - code looked the same but PROD had old version
+
 ### The Root Cause
 Frappe fixtures ONLY CREATE new records. They DO NOT UPDATE existing records.
 When PROD already has a Custom Field, running `migrate` SKIPS the fixture update.
@@ -713,9 +740,10 @@ git push origin refs/heads/v2.1.0
 
 ### 4. Deploy to PROD
 ```bash
-# On PROD server
+# On PROD server - IMPORTANT: Use fetch + reset, NOT git pull
 cd /home/taynaja/frappe-bench/apps/tub_suite
-git fetch origin && git reset --hard origin/v2.1.0
+git fetch origin
+git reset --hard origin/v2.1.0
 
 # Run migrate for code changes (patches, doctypes, etc.)
 cd /home/taynaja/frappe-bench
@@ -727,6 +755,8 @@ bench --site tub.x-desk.tech execute tub_suite.scripts.sync_config_from_dev.appl
 # Clear cache
 bench --site tub.x-desk.tech clear-cache
 ```
+
+**⚠️ CRITICAL**: NEVER use `git pull origin v2.1.0` because there's both a tag and branch with that name. Always use `git fetch origin && git reset --hard origin/v2.1.0`.
 
 ### 5. Verify
 ```bash
