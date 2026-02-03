@@ -242,7 +242,7 @@ export default function ReportIssue() {
             >
               <option value="">{i18n.language === 'th' ? '-- เลือก --' : '-- Select --'}</option>
               <option value="ซ่อม (Repair)">{i18n.language === 'th' ? 'ซ่อม' : 'Repair'}</option>
-              <option value="แก้ไข (Modify)">{i18n.language === 'th' ? 'แก้ไข' : 'Modify'}</option>
+              <option value="แก้ไข (Fix/Correction)">{i18n.language === 'th' ? 'แก้ไข' : 'Fix/Correction'}</option>
               <option value="ติดตั้งใหม่ (New Installation)">{i18n.language === 'th' ? 'ติดตั้งใหม่' : 'New Installation'}</option>
               <option value="ปรับปรุง (Improvement)">{i18n.language === 'th' ? 'ปรับปรุง' : 'Improvement'}</option>
             </select>
