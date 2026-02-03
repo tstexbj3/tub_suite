@@ -7112,7 +7112,7 @@
    "property": "depends_on",
    "property_type": "Data",
    "row_name": null,
-   "value": "eval:doc.workflow_state!=\"Pending Reporter Confirmation\""
+   "value": "eval:doc.workflow_state==\"Finished\""
   },
   {
    "_assign": null,
