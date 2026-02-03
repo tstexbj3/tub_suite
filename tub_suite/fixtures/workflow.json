@@ -4,7 +4,7 @@
   "doctype": "Workflow",
   "document_type": "Asset Repair",
   "is_active": 1,
-  "modified": "2026-01-28 17:24:07.742430",
+  "modified": "2026-02-02 20:54:18.632355",
   "name": "Asset Repair Workflow - Supervisor Only",
   "override_status": 0,
   "send_email_alert": 0,
@@ -122,7 +122,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "Maintenance Manager",
+    "allow_edit": null,
     "avoid_status_override": 0,
     "doc_status": "1",
     "is_optional_state": 0,

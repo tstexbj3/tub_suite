@@ -485,3 +485,34 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 - Total: 84 occurrences of "Approved for Repair" read_only conditions in asset_repair.json
 - Verified: completion_handover_date and repair_result_status have `read_only_depends_on: null` (remain editable)
 - Next: Commit v2.1.34
+
+### 2026-02-03 21:00 — Created comprehensive Asset Repair field reference documentation v2.0
+- User requested: "where is a complete documentation of each section and workflow for the doc"
+- Analysis: Checked ALL 52 project .md files + 400 ERPNext framework docs = **415 total**
+- Finding: **NO SINGLE COMPREHENSIVE FIELD REFERENCE EXISTS** - information scattered across multiple files
+- Initial Solution (v1.0): Created ASSET_REPAIR_FIELD_REFERENCE.md with invented "Section 0-14" numbering
+- **MAJOR ERRORS IN v1.0** (user identified):
+  - Used invented section numbering instead of actual form section labels
+  - Wrong field options (action_type, cleanliness, cost_type)
+  - 7 signature pairs instead of 6
+  - Signature dates always hidden (should show AFTER signing)
+- **COMPLETE REWRITE (v2.0)** based on user's actual form structure:
+  - State-by-state field visibility for ALL 9 workflow states (user provided)
+  - Used actual section labels: "Section 1: Asset Info & Reporter", "สำหรับฝ่ายวิศวกรรม (Engineering Department) 1", etc.
+  - Corrected ALL field options from actual asset_repair.json
+  - 6 signature/date pairs (removed reporter_signature per user request)
+  - Signature dates show AFTER signing with `depends_on` conditions
+  - Required fields by state
+  - Cumulative locking pattern documented
+- **Database Changes Made:**
+  - Removed "Section 0: Document Header (ส่วนหัวเอกสาร FM-EN-04)" label from form
+  - Added `depends_on: eval:doc.[signature_field]` to 6 date fields:
+    - supervisor_section1_date → depends_on: eval:doc.supervisor_section1_signature
+    - gm_section1_approval_date → depends_on: eval:doc.custom_gm_signature
+    - engineering_operator_sign_date → depends_on: eval:doc.engineering_operator_signature
+    - eng_supervisor_review_date → depends_on: eval:doc.eng_supervisor_signature
+    - gm_final_approval_date → depends_on: eval:doc.approval_signature
+    - supervisor_verification_date → depends_on: eval:doc.supervisor_signature
+  - Exported customizations via bench export-fixtures
+- File: ASSET_REPAIR_FIELD_REFERENCE.md (v2.0 - complete rewrite, 495 lines)
+- Status: ✅ COMPLETE - Documentation and database changes applied
