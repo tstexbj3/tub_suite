@@ -233,9 +233,12 @@ def validate_asset_repair(doc, method):
     # State-specific permission checks
     # Pending Engineering Assessment - Engineering Team can edit, GM can transition INTO this state
     if check_state == "Pending Engineering Assessment":
-        # Allow GM transitioning FROM "Pending GM Approval Section 1"
-        if old_workflow_state and old_workflow_state == "Pending GM Approval Section 1" and is_manager:
-            return  # Allow GM to approve and transition to Engineering Assessment
+        # Allow GM transitioning FROM "Pending GM Approval Section 1" OR "Pending GM Final Approval"
+        if old_workflow_state and is_manager:
+            if old_workflow_state == "Pending GM Approval Section 1":
+                return  # Allow GM to approve and transition to Engineering Assessment
+            elif old_workflow_state == "Pending GM Final Approval":
+                return  # Allow GM to request changes and transition back to Engineering Assessment
 
         if is_engineer:
             return  # Allow Engineering Team to edit
@@ -256,12 +259,27 @@ def validate_asset_repair(doc, method):
             # Workflow transition - allow Eng Supervisor transitioning FROM their review state
             if is_eng_supervisor and old_workflow_state == "Pending Engineering Supervisor Review":
                 return  # Allow transition to GM Final Approval
+            # Allow GM transitioning FROM this state to other states (e.g., Request Changes)
+            if is_manager:
+                return  # Allow GM to transition (approve or request changes)
 
         # Normal editing (not transition) - only managers allowed
         if is_manager:
             return  # Allow Managers only
         else:
             frappe.throw(_("Only GM/Maintenance Manager can edit in Pending GM Final Approval state"))
+
+    # Terminal states - ONLY System Manager can edit
+    if check_state in ["Rejected", "Cancelled", "Finished"]:
+        # Allow GM transitioning TO Rejected (from Pending GM Approval Section 1)
+        if check_state == "Rejected" and old_workflow_state == "Pending GM Approval Section 1" and is_manager:
+            return  # Allow GM to reject
+
+        # Otherwise, only System Manager can edit terminal states
+        if "System Manager" in user_roles:
+            return
+        else:
+            frappe.throw(_("Only System Manager can edit documents in {0} state").format(check_state))
 
     # After Draft: Lock ALL fields for engineers
     if not is_manager:

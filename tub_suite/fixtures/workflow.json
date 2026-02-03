@@ -42,7 +42,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "All",
+    "allow_edit": "Engineering Team",
     "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
@@ -138,7 +138,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "All",
+    "allow_edit": "System Manager",
     "avoid_status_override": 0,
     "doc_status": "0",
     "is_optional_state": 0,
