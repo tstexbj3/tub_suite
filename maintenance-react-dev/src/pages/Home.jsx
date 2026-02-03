@@ -148,35 +148,47 @@ export default function Home() {
           <div className="verification-alert-header">
             <span className="verification-badge" style={{backgroundColor: '#10b981'}}>{finishedRepairs.length}</span>
             <h3>
-              ✅ {i18n.language === 'th' ? 'รอการยืนยัน' : 'Awaiting Confirmation'}
+              ✅ {i18n.language === 'th' ? 'งานซ่อมเสร็จสิ้น' : 'Completed Repairs'}
             </h3>
           </div>
           <p>
             {i18n.language === 'th'
-              ? `คุณมี ${finishedRepairs.length} งานซ่อมที่เสร็จแล้ว กรุณายืนยันผลการซ่อม`
-              : `You have ${finishedRepairs.length} finished repair(s) awaiting your confirmation`
+              ? `คุณมี ${finishedRepairs.length} งานซ่อม`
+              : `You have ${finishedRepairs.length} repair(s) in final stages`
             }
           </p>
           <div className="verification-list">
-            {finishedRepairs.map((repair) => (
-              <div
-                key={repair.name}
-                className="verification-item"
-                onClick={() => navigate(`/confirm/${repair.name}`)}
-              >
-                <div className="verification-item-header">
-                  <strong>{repair.asset_name}</strong>
-                  <span className="verification-item-badge" style={{backgroundColor: '#10b981'}}>
-                    {i18n.language === 'th' ? 'กรุณายืนยัน' : 'Please Confirm'}
-                  </span>
+            {finishedRepairs.map((repair) => {
+              const isReadyForConfirmation = repair.workflow_state === "Pending Reporter Confirmation"
+              const isWaitingSupervisor = repair.workflow_state === "Pending Supervisor Verification"
+
+              return (
+                <div
+                  key={repair.name}
+                  className="verification-item"
+                  onClick={() => isReadyForConfirmation && navigate(`/confirm/${repair.name}`)}
+                  style={{ cursor: isReadyForConfirmation ? 'pointer' : 'default', opacity: isWaitingSupervisor ? 0.7 : 1 }}
+                >
+                  <div className="verification-item-header">
+                    <strong>{repair.asset_name}</strong>
+                    <span
+                      className="verification-item-badge"
+                      style={{backgroundColor: isReadyForConfirmation ? '#10b981' : '#f59e0b'}}
+                    >
+                      {isReadyForConfirmation
+                        ? (i18n.language === 'th' ? 'กรุณายืนยัน' : 'Please Confirm')
+                        : (i18n.language === 'th' ? 'รอหัวหน้าตรวจสอบ' : 'Awaiting Supervisor')
+                      }
+                    </span>
+                  </div>
+                  <p className="verification-item-description">{repair.description}</p>
+                  <p className="verification-item-meta">
+                    {repair.location && `📍 ${repair.location} • `}
+                    {new Date(repair.completion_handover_date || repair.failure_date).toLocaleDateString()}
+                  </p>
                 </div>
-                <p className="verification-item-description">{repair.description}</p>
-                <p className="verification-item-meta">
-                  {repair.location && `📍 ${repair.location} • `}
-                  {new Date(repair.completion_handover_date || repair.failure_date).toLocaleDateString()}
-                </p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
