@@ -854,18 +854,17 @@ def get_repairs_needing_verification():
 @frappe.whitelist()
 def get_repairs_for_confirmation():
     """
-    Get repairs in Finished state that need reporter confirmation
+    Get repairs awaiting supervisor verification or reporter confirmation
     Returns repairs where:
-    - workflow_state = "Finished"
+    - workflow_state = "Pending Supervisor Verification" OR "Pending Reporter Confirmation"
     - reported_by = current user
-    - reporter_confirmation_date is NULL (not yet confirmed)
 
-    Used by portal to show finished repairs awaiting final confirmation
+    Used by portal to show repairs in final stages (supervisor verify → reporter confirm)
     """
     try:
         repairs = frappe.get_all("Asset Repair",
             filters={
-                "workflow_state": "Pending Reporter Confirmation",
+                "workflow_state": ["in", ["Pending Supervisor Verification", "Pending Reporter Confirmation"]],
                 "reported_by": frappe.session.user,
             },
             fields=[
