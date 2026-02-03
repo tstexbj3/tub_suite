@@ -859,12 +859,12 @@ def get_repairs_for_confirmation():
     - workflow_state = "Pending Supervisor Verification" OR "Pending Reporter Confirmation"
     - reported_by = current user
 
-    Used by portal to show repairs in final stages (supervisor verify → reporter confirm)
+    Used by portal to show repairs ready for reporter confirmation
     """
     try:
         repairs = frappe.get_all("Asset Repair",
             filters={
-                "workflow_state": ["in", ["Pending Supervisor Verification", "Pending Reporter Confirmation"]],
+                "workflow_state": "Pending Reporter Confirmation",
                 "reported_by": frappe.session.user,
             },
             fields=[
