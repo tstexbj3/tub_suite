@@ -125,7 +125,46 @@ git push origin v2.1.0
 
 ---
 
-## 5. THE TWO SYNC MECHANISMS (most important section)
+## 5. DEPLOYMENT TO PROD (VPS)
+
+### Standard Deployment (DocTypes, Python, fixtures)
+```bash
+cd /home/taynaja/frappe-bench/apps/tub_suite
+git fetch origin
+git reset --hard origin/v2.1.0
+cd /home/taynaja/frappe-bench
+bench --site tub.x-desk.tech migrate
+bench --site tub.x-desk.tech clear-cache
+bench restart
+```
+
+### ⚠️ React Portal Deployment (maintenance-react-dev/)
+**CRITICAL:** After `git pull`, you MUST run `bench build --app tub_suite` to copy public assets from `tub_suite/public/` to `sites/assets/`. Git pull alone does NOT update served files.
+
+```bash
+cd /home/taynaja/frappe-bench/apps/tub_suite
+git fetch origin
+git reset --hard origin/v2.1.0
+cd /home/taynaja/frappe-bench
+bench build --app tub_suite              ← REQUIRED for React changes
+bench --site tub.x-desk.tech clear-cache
+bench restart
+```
+
+**Why `bench build` is required:**
+- React builds to `tub_suite/public/maintenance/assets/index.js`
+- Frappe serves from `sites/assets/tub_suite/maintenance/assets/index.js`
+- `bench build` copies `public/` → `sites/assets/`
+- Without it: Old JS stays cached in `sites/assets/` even though new JS is in git repo
+
+**When to use:**
+- Any change to `maintenance-react-dev/src/**` files
+- After running `npm run build` in maintenance-react-dev/
+- Anytime portal UI isn't updating after git pull
+
+---
+
+## 6. THE TWO SYNC MECHANISMS (most important section)
 
 Frappe has TWO built-in sync systems. Use BOTH. No custom scripts needed.
 
@@ -186,7 +225,7 @@ The old CLAUDE2.md had a 300-line `sync_config_from_dev.py` script. That was a m
 
 ---
 
-## 6. THINGS THAT DO NOT WORK
+## 7. THINGS THAT DO NOT WORK
 
 1. ❌ **Patches that hardcode config values** (mega_sync_all_config) — ran on every migrate with stale values, caused infinite reset loop across v2.1.19-v2.1.29
 2. ❌ **Custom sync scripts** (sync_config_from_dev.py) — manual reimplementation of built-in `sync_customizations()`, unnecessary complexity
@@ -199,7 +238,7 @@ The old CLAUDE2.md had a 300-line `sync_config_from_dev.py` script. That was a m
 
 ---
 
-## 7. DEPLOYMENT PROCEDURE
+## 8. DEPLOYMENT PROCEDURE (LEGACY - See Section 5 for current)
 
 ### DEV — after changes:
 ```bash
@@ -250,7 +289,7 @@ frappe.db.commit()
 
 ---
 
-## 8. VERIFICATION
+## 9. VERIFICATION
 
 ```bash
 cd ~/frappe-bench
@@ -274,7 +313,7 @@ PYEOF
 
 ---
 
-## 9. FILE STRUCTURE
+## 10. FILE STRUCTURE
 
 ```
 ~/frappe-bench/apps/tub_suite/
@@ -307,7 +346,7 @@ PYEOF
 
 ---
 
-## 10. ASSET REPAIR WORKFLOW
+## 11. ASSET REPAIR WORKFLOW
 
 | State | Description |
 |-------|-------------|
@@ -324,7 +363,7 @@ PYEOF
 
 ---
 
-## 11. HISTORY (why things are the way they are)
+## 12. HISTORY (why things are the way they are)
 
 ### The mega_sync disaster (v2.1.19 — v2.1.29)
 A patch called `mega_sync_all_config` was added to patches.txt in v2.1.19. It hardcoded ALL Custom Field and Property Setter values into a Python script. Every time `bench migrate` ran, it reset the config to v2.1.19 values. Fixes in v2.1.24-v2.1.28 were undone on every migrate. v2.1.29 finally removed the patch.
@@ -348,7 +387,7 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 
 ---
 
-## 12. CONTEXT COMPACTION RECOVERY
+## 13. CONTEXT COMPACTION RECOVERY
 
 1. ✅ Re-read this ENTIRE file
 2. ✅ `cd ~/frappe-bench && git -C apps/tub_suite log --oneline -10`
@@ -362,7 +401,7 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
 
 ---
 
-## 13. Session Log
+## 14. Session Log
 
 <!-- MANDATORY: Append after EVERY step -->
 <!-- ### YYYY-MM-DD HH:MM — Summary -->
