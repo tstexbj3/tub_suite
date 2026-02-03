@@ -516,3 +516,130 @@ The `tub_suite/tub_suite/custom/` directory never existed. The app only used fix
   - Exported customizations via bench export-fixtures
 - File: ASSET_REPAIR_FIELD_REFERENCE.md (v2.0 - complete rewrite, 495 lines)
 - Status: ✅ COMPLETE - Documentation and database changes applied
+
+### 2026-02-03 18:30 — Complete Asset Repair form reset (ALL components)
+- **Task**: Systematic audit and fix of ALL Asset Repair form components
+- **Audit Results** (PART 1):
+  - Custom Fields: 70+ fields analyzed for visibility/locking rules
+  - Section Breaks: 14 sections checked (3 needed fixes)
+  - Standard Fields: 2 fields verified hidden (final_remarks, section_break_23)
+  - Signature Dates: All 6 pairs verified with correct depends_on
+  - Workflow: 11 states, 16 transitions (1 state needed fix)
+  - Client Script: 1 enabled script (missing 6 critical fields)
+  - Override Class: Verified 6 signature pairs + state validation
+- **Fixes Applied**:
+  1. **Section Visibility** (3 sections):
+     - `section_1b_break`: Changed to ALWAYS VISIBLE (was Draft-only)
+     - `section_3b_break`: Added FORMULA E (Pending Supervisor Verification onwards)
+     - `fm_en_04_section_5`: Added FORMULA E (Pending Supervisor Verification onwards)
+  2. **Workflow State** (1 state):
+     - `Finished`: Set allow_edit=NULL (read-only, was Maintenance Manager)
+     - Note: Multi-role permissions handled by asset_repair_override.py validation
+  3. **Client Script** (6 fields added):
+     - engineering_operator_signature, eng_supervisor_signature
+     - completion_handover_date, repair_result_status
+     - custom_cause_description, engineering_operator_signed_by
+     - Total: 13+ engineering fields locked in post-engineering states
+- **Verification** (PART 8): ✅ ALL 6 CHECKS PASSED
+  - ✓ Section break depends_on formulas correct
+  - ✓ Signature date visibility (6 pairs show after signing)
+  - ✓ Standard fields hidden (final_remarks, section_break_23)
+  - ✓ Workflow (11 states, 16 transitions, Finished read-only)
+  - ✓ Override class registered (tub_suite.overrides.asset_repair_override.CustomAssetRepair)
+  - ✓ Client Script enabled with all critical fields
+- **Export Methods**:
+  - export_customizations() → tub_suite/tub_suite/custom/asset_repair.json (FULL OVERWRITE on migrate)
+  - export-fixtures → tub_suite/fixtures/workflow.json (Finished state change)
+- **Files Modified**:
+  - CLAUDE.md (session log)
+  - tub_suite/tub_suite/custom/asset_repair.json (section visibility changes)
+  - tub_suite/fixtures/workflow.json (Finished state read-only)
+- **Commit**: 507848f "fix: Complete Asset Repair form reset - field visibility + workflow + Client Script"
+- **Status**: ✅ COMPLETE - All fixes exported, verified, committed, pushed
+- **Next**: User deploys to PROD via `git fetch origin && git reset --hard origin/v2.1.0 && bench migrate`
+
+### 2026-02-03 19:00 — Post-deployment fixes (PROD migration errors + field visibility)
+- **Issue 1**: Migration failed with `MandatoryError: allow_edit` on Finished state
+  - **Cause**: Frappe validates allow_edit as mandatory, NULL not allowed
+  - **Fix**: Set Finished state allow_edit = "System Manager" (most restrictive)
+  - **Commit**: cdfe360
+- **Issue 2**: maintenance_task was EDITABLE in most states
+  - **Cause**: Had read_only_depends_on condition that only locked it in 2 states
+  - **Fix**: Removed read_only_depends_on, set read_only=1 permanently (always locked)
+  - **Why**: Field pre-filled from PM/Portal system, should never be edited
+  - **Commit**: 93ce847
+- **Issue 3**: supervisor_section1_date showing under GM section instead of Supervisor section
+  - **Cause**: field_order Property Setter had wrong position (after custom_gm_signature)
+  - **Fix**: Moved supervisor_section1_date to appear right after supervisor_section1_signature
+  - **Commit**: 5ca5b86
+- **Issue 4**: Supervisor signature NOT visible in "Pending GM Approval Section 1"
+  - **Cause**: supervisor_section1_signature had `depends_on: eval:doc.workflow_state=="Draft"` (Draft-only)
+  - **Fix**: Removed depends_on condition - signature now visible in ALL states (approval audit trail)
+  - **Why**: GM and approvers need to see who supervisor was + when they signed
+  - **Commit**: b114c2e
+  - **Documentation**: Updated ASSET_REPAIR_FIELD_REFERENCE.md to reflect visibility behavior
+- **Final Status**: All 4 issues fixed, tested on DEV, ready for PROD deployment
+
+### 2026-02-03 19:30 — Continued post-deployment fixes (more field visibility + locking issues)
+- **Issue 5**: Supervisor signature was EDITABLE in non-Draft states
+  - **Cause**: read_only_depends_on only locked in 2 states (incomplete condition)
+  - **Fix**: Changed to `eval:doc.workflow_state!="Draft"` (lock in ALL non-Draft states)
+  - **Commit**: c3d8041
+- **Issue 6**: ALL 6 signature dates were EDITABLE (users could manually edit timestamps)
+  - **Cause**: read_only_depends_on conditions OVERRODE base read_only=1 property
+  - **Fix**: Removed read_only_depends_on from all 6 date fields (permanently locked)
+  - **Why**: Date fields auto-filled by override class, should NEVER be manually editable
+  - **Fields Fixed**:
+    - supervisor_section1_date, gm_section1_approval_date, engineering_operator_sign_date
+    - eng_supervisor_review_date, gm_final_approval_date, supervisor_verification_date
+  - **Commit**: 99f4178
+- **Issue 7**: Legacy auto-fill fields showing in wrong states
+  - **Cause**: engineering_operator_signed_by, manager_approved_by, manager_approval_date visible in "Pending Engineering Assessment"
+  - **Fix**: Set hidden=1 on all 3 legacy fields (replaced by new signature system)
+  - **Commit**: a69bc8d
+- **Issue 8**: Engineering fields EDITABLE in "Pending GM Final Approval" state
+  - **Cause**: read_only_depends_on only locked in 2 states, missing "Pending GM Final Approval", "Pending Reporter Confirmation", "Finished"
+  - **Fix**: Updated read_only_depends_on to include all 5 post-engineering states
+  - **Fields Fixed**: action_type, custom_cost_type, custom_engineering_todo_items, spare_parts_used, etc. (13+ fields)
+  - **Commit**: 518a147
+- **Issue 9**: completion_handover_date showing too early (in "Approved for Repair")
+  - **Cause**: depends_on included "Approved for Repair" but field has no value until auto-filled on "Job Finished" transition
+  - **Fix**: Removed "Approved for Repair" from depends_on (only show after auto-fill)
+  - **Commit**: 499fc8b
+- **Final Status**: Additional 5 field visibility/locking issues fixed, all exported and committed
+
+### 2026-02-03 19:40 — Portal query and UI fixes (repairs not showing on portal)
+- **Issue 10**: Portal only showing 1 repair instead of all 3 on same asset
+  - **Cause**: Query in `maintenance.py:get_repairs_for_confirmation()` only filtered for "Pending Reporter Confirmation"
+  - **Why Wrong**: After supervisor verifies, repair moves to "Pending Reporter Confirmation", but repairs can also be in "Pending Supervisor Verification" waiting for supervisor
+  - **User Had 3 Repairs**:
+    1. Repair A: "Pending Reporter Confirmation" (ready for reporter) ✓ Shown
+    2. Repair B: "Pending Supervisor Verification" (waiting supervisor) ✗ Hidden
+    3. Repair C: "Pending Supervisor Verification" (waiting supervisor) ✗ Hidden
+  - **Fix**: Updated query to include BOTH states:
+    ```python
+    "workflow_state": ["in", ["Pending Supervisor Verification", "Pending Reporter Confirmation"]]
+    ```
+  - **Files Modified**: tub_suite/api/maintenance.py (line 867)
+  - **Commit**: 46f125d
+- **Issue 11**: Portal allowing clicks on unverified repairs (validation error)
+  - **Cause**: After query fix, all 3 repairs showed, but clicking on "Pending Supervisor Verification" repairs caused error
+  - **Error Message**: `frappe.exceptions.ValidationError: Repair must be in Pending Reporter Confirmation state for confirmation`
+  - **Why Wrong**: Home.jsx treated all completed repairs identically - same badge, same click behavior
+  - **Fix**: Updated Home.jsx to differentiate repair states visually:
+    1. Added state detection:
+       - `isReadyForConfirmation = workflow_state === "Pending Reporter Confirmation"`
+       - `isWaitingSupervisor = workflow_state === "Pending Supervisor Verification"`
+    2. Visual differentiation:
+       - Ready: Green badge (#10b981), "Please Confirm" text, clickable
+       - Waiting: Orange badge (#f59e0b), "Awaiting Supervisor" text, dimmed (opacity 0.7), not clickable
+    3. Interaction control:
+       - Only "Pending Reporter Confirmation" repairs navigate to /confirm page
+       - "Pending Supervisor Verification" repairs show as read-only status
+  - **Files Modified**:
+    - maintenance-react-dev/src/pages/Home.jsx (lines 145-194)
+    - tub_suite/public/maintenance/assets/index.js (rebuilt React app)
+  - **Build Process**: `npm run build` via WSL (Vite 5.4.21, no hash update needed - uses Frappe's ?v= cache busting)
+  - **Commit**: 9a93537
+- **Final Status**: Portal now shows ALL pending repairs with clear visual state differentiation, preventing premature confirmation attempts
+- **Current HEAD**: 9a93537
