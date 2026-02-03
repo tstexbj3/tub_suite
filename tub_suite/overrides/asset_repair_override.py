@@ -189,6 +189,11 @@ def validate_asset_repair(doc, method):
         if old_workflow_state and old_workflow_state == "Pending GM Final Approval" and is_manager:
             return  # Allow GM to approve and transition to Approved for Repair
 
+        # Allow supervisors transitioning TO this state when rejecting (from Pending Supervisor Verification)
+        if old_workflow_state and old_workflow_state == "Pending Supervisor Verification":
+            if is_regular_supervisor or is_maintenance_supervisor:
+                return  # Allow supervisor to reject and send back to Approved for Repair
+
         if is_eng_supervisor:
             return  # Allow Engineering Supervisor ONLY
         else:
