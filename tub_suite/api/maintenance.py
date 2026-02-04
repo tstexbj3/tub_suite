@@ -1023,7 +1023,7 @@ def get_inspector_todo_list(days_ahead=7):
 
         # Get all Asset Maintenance records (including drafts - no docstatus filter)
         maintenance_list = frappe.get_all("Asset Maintenance",
-            fields=["name", "asset_name", "company", "maintenance_team"]
+            fields=["name", "asset_name", "company", "maintenance_team", "docstatus"]
         )
 
         frappe.logger().info(f"Found {len(maintenance_list)} Asset Maintenance records")
@@ -1070,33 +1070,38 @@ def get_inspector_todo_list(days_ahead=7):
                     "last_completion_date": task.last_completion_date
                 }
 
-                # Use ERPNext's maintenance_status field to categorize tasks
-                # This ensures portal matches what Maintenance Manager sees in ERPNext
-                if task.maintenance_status == "Overdue":
-                    # Calculate days overdue for display
-                    if task.next_due_date:
-                        due_date = frappe.utils.getdate(task.next_due_date)
-                        today_date = frappe.utils.getdate(today)
-                        days_diff = (due_date - today_date).days
-                        task_data["days_overdue"] = -days_diff if days_diff < 0 else 0
-                    else:
-                        task_data["days_overdue"] = 0
+                # Categorize tasks based on:
+                # 1. For SUBMITTED Asset Maintenance: Trust maintenance_status (ERPNext manages it)
+                # 2. For DRAFT Asset Maintenance: Calculate from next_due_date (status not updated)
+
+                if not task.next_due_date:
+                    # Skip tasks without due date
+                    continue
+
+                due_date = frappe.utils.getdate(task.next_due_date)
+                today_date = frappe.utils.getdate(today)
+                days_diff = (due_date - today_date).days
+
+                # For SUBMITTED maintenance: Trust ERPNext's maintenance_status
+                # For DRAFT maintenance: Calculate from dates (scheduled job doesn't update Draft records)
+                is_submitted = maintenance.docstatus == 1
+
+                if is_submitted and task.maintenance_status == "Overdue":
+                    # Submitted + Overdue status = Truly overdue (managed by ERPNext)
+                    task_data["days_overdue"] = -days_diff if days_diff < 0 else 0
                     overdue.append(task_data)
-
-                elif task.maintenance_status == "Planned" and task.next_due_date:
-                    # Check if due today or upcoming (within days_ahead)
-                    due_date = frappe.utils.getdate(task.next_due_date)
-                    today_date = frappe.utils.getdate(today)
-                    days_diff = (due_date - today_date).days
-
+                elif not is_submitted and days_diff < 0:
+                    # Draft but date is past = Show as overdue (status won't update until submitted)
+                    task_data["days_overdue"] = -days_diff
+                    overdue.append(task_data)
+                elif days_diff == 0:
+                    # Due today (both Draft and Submitted)
                     task_data["days_overdue"] = 0
-
-                    if days_diff == 0:
-                        # Due today
-                        due_today.append(task_data)
-                    elif days_diff > 0 and days_diff <= int(days_ahead):
-                        # Upcoming
-                        upcoming.append(task_data)
+                    due_today.append(task_data)
+                elif days_diff > 0 and days_diff <= int(days_ahead):
+                    # Upcoming (both Draft and Submitted)
+                    task_data["days_overdue"] = 0
+                    upcoming.append(task_data)
 
         # Sort by due date
         overdue.sort(key=lambda x: x.get("next_due_date") or "")
