@@ -276,9 +276,18 @@ def validate_asset_repair(doc, method):
 
     # Terminal states - ONLY System Manager can edit
     if check_state in ["Rejected", "Cancelled", "Finished"]:
-        # Allow GM transitioning TO Rejected (from Pending GM Approval Section 1)
-        if check_state == "Rejected" and old_workflow_state == "Pending GM Approval Section 1" and is_manager:
-            return  # Allow GM to reject
+        # Allow transitions TO terminal states
+        if old_workflow_state and old_workflow_state != check_state:
+            # Allow GM transitioning TO Rejected (from Pending GM Approval Section 1)
+            if check_state == "Rejected" and old_workflow_state == "Pending GM Approval Section 1" and is_manager:
+                return  # Allow GM to reject
+
+            # Allow reporter/supervisors/managers transitioning TO Finished (from Pending Reporter Confirmation)
+            if check_state == "Finished" and old_workflow_state == "Pending Reporter Confirmation":
+                current_user = frappe.session.user
+                is_original_reporter = (doc.get("reported_by") == current_user)
+                if is_original_reporter or is_manager or is_any_supervisor:
+                    return  # Allow reporter confirmation
 
         # Otherwise, only System Manager can edit terminal states
         if "System Manager" in user_roles:
