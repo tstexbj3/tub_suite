@@ -104,6 +104,10 @@ doc_events = {
         "before_save": "tub_suite.overrides.asset_repair_override.before_save_asset_repair",
         "before_submit": "tub_suite.overrides.asset_repair_override.before_submit_asset_repair",
         "on_update_after_submit": "tub_suite.overrides.asset_repair_override.on_update_after_submit_asset_repair"
+    },
+    "Asset Maintenance": {
+        "validate": "tub_suite.overrides.asset_maintenance_override.validate_asset_maintenance",
+        "on_submit": "tub_suite.overrides.asset_maintenance_override.on_submit_asset_maintenance"
     }
 }
 
