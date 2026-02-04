@@ -1066,24 +1066,35 @@ def get_inspector_todo_list(days_ahead=7):
                     "periodicity": task.periodicity,
                     "next_due_date": task.next_due_date,
                     "maintenance_type": task.maintenance_type,
+                    "maintenance_status": task.maintenance_status,
                     "last_completion_date": task.last_completion_date
                 }
 
-                # Calculate days overdue/until due
-                if task.next_due_date:
+                # Use ERPNext's maintenance_status field to categorize tasks
+                # This ensures portal matches what Maintenance Manager sees in ERPNext
+                if task.maintenance_status == "Overdue":
+                    # Calculate days overdue for display
+                    if task.next_due_date:
+                        due_date = frappe.utils.getdate(task.next_due_date)
+                        today_date = frappe.utils.getdate(today)
+                        days_diff = (due_date - today_date).days
+                        task_data["days_overdue"] = -days_diff if days_diff < 0 else 0
+                    else:
+                        task_data["days_overdue"] = 0
+                    overdue.append(task_data)
+
+                elif task.maintenance_status == "Planned" and task.next_due_date:
+                    # Check if due today or upcoming (within days_ahead)
                     due_date = frappe.utils.getdate(task.next_due_date)
                     today_date = frappe.utils.getdate(today)
                     days_diff = (due_date - today_date).days
 
-                    task_data["days_overdue"] = -days_diff if days_diff < 0 else 0
+                    task_data["days_overdue"] = 0
 
-                    if days_diff < 0:
-                        # Overdue
-                        overdue.append(task_data)
-                    elif days_diff == 0:
+                    if days_diff == 0:
                         # Due today
                         due_today.append(task_data)
-                    elif days_diff <= int(days_ahead):
+                    elif days_diff > 0 and days_diff <= int(days_ahead):
                         # Upcoming
                         upcoming.append(task_data)
 
